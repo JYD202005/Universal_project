@@ -1,4 +1,6 @@
+import 'package:base_de_datos_universal/colours/colours.dart';
 import 'package:flutter/material.dart';
+import 'package:base_de_datos_universal/dahsboard/home_screen.dart';
 
 class LoginDesign extends StatelessWidget {
   const LoginDesign({super.key});
@@ -6,7 +8,7 @@ class LoginDesign extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
+      backgroundColor: ProyectColors.backgroundDark,
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
@@ -20,7 +22,7 @@ class LoginDesign extends StatelessWidget {
                 const Text(
                   'Bienvenido a la Universal',
                   style: TextStyle(
-                    color: Colors.greenAccent,
+                    color: ProyectColors.accentGreen,
                     fontSize: 26,
                     fontWeight: FontWeight.bold,
                   ),
@@ -32,13 +34,18 @@ class LoginDesign extends StatelessWidget {
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
+                    backgroundColor: ProyectColors.primaryGreen,
                     padding:
                         const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
                   ),
-                  onPressed: () {}, // no funciona es solo diseño
+                  onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const DashboardPage()),
+                        );
+                  }, // no funciona es solo diseño
                   child: const Text('Iniciar sesión',
-                  style: TextStyle(color: Color.fromARGB(255, 242, 245, 243)),
+                  style: TextStyle(color: ProyectColors.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -46,7 +53,7 @@ class LoginDesign extends StatelessWidget {
                   onPressed: () {},
                   child: const Text(
                     '¿No tienes cuenta? Regístrate',
-                    style: TextStyle(color: Colors.greenAccent),
+                    style: TextStyle(color: ProyectColors.accentGreen),
                   ),
                 ),
               ],
@@ -61,22 +68,22 @@ class LoginDesign extends StatelessWidget {
       {bool isPassword = false}) {
     return TextField(
       obscureText: isPassword,
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: ProyectColors.textPrimary),
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: const TextStyle(color: Colors.grey),
+        hintStyle: const TextStyle(color: ProyectColors.textSecondary),
         filled: true,
         fillColor: const Color(0xFF1E1E1E),
-        prefixIcon: Icon(icon, color: Colors.white),
+        prefixIcon: Icon(icon, color: ProyectColors.textPrimary),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),
         enabledBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.green),
+          borderSide: const BorderSide(color: ProyectColors.primaryGreen),
           borderRadius: BorderRadius.circular(12),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: Colors.greenAccent, width: 2),
+          borderSide: const BorderSide(color: ProyectColors.accentGreen, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
       ),
