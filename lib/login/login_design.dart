@@ -1,12 +1,22 @@
-import 'package:base_de_datos_universal/colours/colours.dart';
 import 'package:flutter/material.dart';
+import 'package:base_de_datos_universal/colours/colours.dart';
 import 'package:base_de_datos_universal/dahsboard/home_screen.dart';
+import 'package:base_de_datos_universal/MYSQL/db_service.dart';
 
 class LoginDesign extends StatelessWidget {
   const LoginDesign({super.key});
 
+  final TextStyle titleStyle = const TextStyle(
+    color: ProyectColors.accentGreen,
+    fontSize: 26,
+    fontWeight: FontWeight.bold,
+  );
+
   @override
   Widget build(BuildContext context) {
+    final correoController = TextEditingController();
+    final contrasenaController = TextEditingController();
+
     return Scaffold(
       backgroundColor: ProyectColors.backgroundDark,
       body: Center(
@@ -17,36 +27,36 @@ class LoginDesign extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('lib/assets/logo_universal.png', height: 120), 
+                Image.asset('lib/assets/logo_universal.png', height: 120),
                 const SizedBox(height: 24),
-                const Text(
-                  'Bienvenido a la Universal',
-                  style: TextStyle(
-                    color: ProyectColors.accentGreen,
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                Text('Bienvenido a la Universal', style: titleStyle),
                 const SizedBox(height: 32),
-                _buildInputField('Correo electrónico', Icons.email),
+                _buildInputField('Correo electrónico', Icons.email, controller: correoController),
                 const SizedBox(height: 16),
-                _buildInputField('Contraseña', Icons.lock, isPassword: true),
+                _buildInputField('Contraseña', Icons.lock, isPassword: true, controller: contrasenaController),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ProyectColors.primaryGreen,
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
                   ),
-                  onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const DashboardPage()),
-                        );
-                  }, // no funciona es solo diseño
-                  child: const Text('Iniciar sesión',
-                  style: TextStyle(color: ProyectColors.textPrimary),
-                  ),
+                  onPressed: () async {
+                    final correo = correoController.text.trim();
+                    final contrasena = contrasenaController.text.trim();
+                    final valido = await validarUsuario(correo, contrasena);
+
+                    if (valido) {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => const DashboardPage()),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Credenciales incorrectas')),
+                      );
+                    }
+                  },
+                  child: const Text('Iniciar sesión', style: TextStyle(color: ProyectColors.textPrimary)),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
@@ -65,8 +75,9 @@ class LoginDesign extends StatelessWidget {
   }
 
   Widget _buildInputField(String hint, IconData icon,
-      {bool isPassword = false}) {
+      {bool isPassword = false, required TextEditingController controller}) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
       style: const TextStyle(color: ProyectColors.textPrimary),
       decoration: InputDecoration(
@@ -75,9 +86,7 @@ class LoginDesign extends StatelessWidget {
         filled: true,
         fillColor: const Color(0xFF1E1E1E),
         prefixIcon: Icon(icon, color: ProyectColors.textPrimary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
         enabledBorder: OutlineInputBorder(
           borderSide: const BorderSide(color: ProyectColors.primaryGreen),
           borderRadius: BorderRadius.circular(12),
