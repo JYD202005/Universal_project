@@ -30,6 +30,30 @@ class _DashboardPageState extends State<DashboardPage> {
             labelType: NavigationRailLabelType.all,
             selectedIconTheme: const IconThemeData(color: ProyectColors.primaryGreen),
             selectedLabelTextStyle: const TextStyle(color: ProyectColors.primaryGreen),
+            unselectedLabelTextStyle: const TextStyle(color: ProyectColors.textSecondary),
+            leading: Column(
+              children: [
+                Image.asset('lib/assets/logo_universal.png', height: 120),
+                const Text('La Universal', style: TextStyle(fontSize: 16, color: ProyectColors.textPrimary,fontWeight: FontWeight.bold,)),
+                const Divider(color: Colors.white24),
+              ],
+            ),
+            trailing: Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: const [
+                  Divider(color: Colors.white24),
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: ProyectColors.primaryGreen,
+                    child: Icon(Icons.person, color: ProyectColors.backgroundDark),
+                  ),
+                  SizedBox(height: 8),
+                  Text('Usuario', style: TextStyle(color: ProyectColors.textSecondary)),
+                  SizedBox(height: 16),
+                ],
+              ),
+            ),
             destinations: const [
               NavigationRailDestination(
                 icon: Icon(Icons.dashboard),
@@ -70,12 +94,12 @@ class _DashboardPageState extends State<DashboardPage> {
                   ),
                   const SizedBox(height: 24),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       _buildCard('Empleados activos', '120'),
-                      _buildCard('Cuadrillas', '14'),
-                      _buildCard('Actividades', '250'),
-                      _buildCard('Inventario \$', '\$300k'),
+                      _buildCard('Ventas del Dia', '14'),
+                      _buildCard('Productos Agotados', '250'),
+                      _buildCard('Entradas Registradas' , '50'),
                     ],
                   ),
                   const SizedBox(height: 32),
@@ -95,11 +119,14 @@ class _DashboardPageState extends State<DashboardPage> {
                               : ProyectColors.textPrimary,
                         ),
                         backgroundColor: ProyectColors.surfaceDark,
+                        avatar: selectedFilter == filter
+                            ? const Icon(Icons.visibility, size: 20, color: Colors.black)
+                            : null,
                       );
                     }).toList(),
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(child: _buildProductTable()),
+                  const SizedBox(height: 8),
+                  _buildProductTable(),
                 ],
               ),
             ),
@@ -111,65 +138,76 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildCard(String title, String value) {
     return Expanded(
-      child: InkWell(
-        onTap: () {},
-        child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: ProyectColors.primaryGreen,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 14
-                ),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 8),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.3), 
+              blurRadius: 12,                     
+              spreadRadius: 1,                     
+              offset: const Offset(0, 4), 
+            ),
+          ],
+          color: ProyectColors.primaryGreen, 
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center, 
+          crossAxisAlignment: CrossAxisAlignment.center, 
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center, 
+              style: const TextStyle(
+                color: ProyectColors.textPrimary,
+                fontSize: 19
               ),
-              const SizedBox(height: 8),
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Colors.black,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              textAlign: TextAlign.center, 
+              style: const TextStyle(
+                color: ProyectColors.textPrimary,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildProductTable() {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: ProyectColors.primaryGreen),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: DataTable(
-          columnSpacing: 16,
-          headingRowColor: MaterialStateProperty.all(ProyectColors.primaryGreen),
-          columns: const [
-            DataColumn(label: Text('Producto', style: TextStyle(color: ProyectColors.textPrimary))),
-            DataColumn(label: Text('Categoría', style: TextStyle(color: ProyectColors.textPrimary))),
-            DataColumn(label: Text('Stock actual', style: TextStyle(color: ProyectColors.textPrimary))),
-            DataColumn(label: Text('Stock mínimo', style: TextStyle(color: ProyectColors.textPrimary))),
-            DataColumn(label: Text('Estado', style: TextStyle(color: ProyectColors.textPrimary))),
-          ],
-          rows: [
-            _buildRow('Cables UTP', 'Redes', '4', '10', 'Bajo'),
-            _buildRow('Router TP-Link', 'Redes', '2', '5', 'Crítico'),
-            _buildRow('Arduino UNO', 'Electrónica', '7', '15', 'Bajo'),
-            _buildRow('Multímetro', 'Instrumentos', '1', '3', 'Crítico'),
-          ],
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        decoration: BoxDecoration(
+          border: Border.all(color: ProyectColors.primaryGreen),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: DataTable(
+            columnSpacing: 16,
+            headingRowColor: MaterialStateProperty.all(ProyectColors.primaryGreen),
+            columns: const [
+              DataColumn(label: Text('Producto', style: TextStyle(color: ProyectColors.textPrimary))),
+              DataColumn(label: Text('Categoría', style: TextStyle(color: ProyectColors.textPrimary))),
+              DataColumn(label: Text('Stock actual', style: TextStyle(color: ProyectColors.textPrimary))),
+              DataColumn(label: Text('Stock mínimo', style: TextStyle(color: ProyectColors.textPrimary))),
+              DataColumn(label: Text('Estado', style: TextStyle(color: ProyectColors.textPrimary))),
+            ],
+            rows: [
+              _buildRow('Cables UTP', 'Redes', '4', '10', 'Bajo'),
+              _buildRow('Router TP-Link', 'Redes', '2', '5', 'Crítico'),
+              _buildRow('Arduino UNO', 'Electrónica', '7', '15', 'Bajo'),
+              _buildRow('Multímetro', 'Instrumentos', '1', '3', 'Crítico'),
+            ],
+          ),
         ),
       ),
     );
