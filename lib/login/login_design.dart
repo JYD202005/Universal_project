@@ -58,6 +58,21 @@ class LoginDesign extends StatelessWidget {
                   },
                   child: const Text('Iniciar sesión', style: TextStyle(color: ProyectColors.textPrimary)),
                 ),
+                const SizedBox(height: 8),
+                // Botón para saltar al dashboard sin login
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(builder: (_) => const DashboardPage()),
+                    );
+                  },
+                  child: const Text(
+                    'Saltar login',
+                    style: TextStyle(color: ProyectColors.textSecondary, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {},
