@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:base_de_datos_universal/colours/colours.dart';
+import 'package:base_de_datos_universal/dashboard/menubar.dart' as custom_menu;
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -9,7 +10,6 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  int selectedIndex = 0;
   String selectedFilter = 'Todos';
   final List<String> filters = ['Todos', 'Stock bajo', 'Vencidos', 'Sin proveedor'];
 
@@ -19,59 +19,12 @@ class _DashboardPageState extends State<DashboardPage> {
       backgroundColor: ProyectColors.surfaceDark,
       body: Row(
         children: [
-          NavigationRail(
-            backgroundColor: ProyectColors.backgroundDark,
-            selectedIndex: selectedIndex,
+          custom_menu.MenuBar(
+            selectedIndex: 0,
             onDestinationSelected: (int index) {
               setState(() {
-                selectedIndex = index;
               });
             },
-            labelType: NavigationRailLabelType.all,
-            selectedIconTheme: const IconThemeData(color: ProyectColors.primaryGreen),
-            selectedLabelTextStyle: const TextStyle(color: ProyectColors.primaryGreen),
-            unselectedLabelTextStyle: const TextStyle(color: ProyectColors.textSecondary),
-            leading: Column(
-              children: [
-                Image.asset('lib/assets/logo_universal.png', height: 120),
-                const Text('La Universal', style: TextStyle(fontSize: 16, color: ProyectColors.textPrimary,fontWeight: FontWeight.bold,)),
-                const Divider(color: Colors.white24),
-              ],
-            ),
-            trailing: Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: const [
-                  Divider(color: Colors.white24),
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: ProyectColors.primaryGreen,
-                    child: Icon(Icons.person, color: ProyectColors.backgroundDark),
-                  ),
-                  SizedBox(height: 8),
-                  Text('Usuario', style: TextStyle(color: ProyectColors.textSecondary)),
-                  SizedBox(height: 16),
-                ],
-              ),
-            ),
-            destinations: const [
-              NavigationRailDestination(
-                icon: Icon(Icons.dashboard),
-                label: Text('Inicio'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.inventory),
-                label: Text('Inventario'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.group),
-                label: Text('Empleados'),
-              ),
-              NavigationRailDestination(
-                icon: Icon(Icons.settings),
-                label: Text('Configuración'),
-              ),
-            ],
           ),
           Expanded(
             child: Padding(

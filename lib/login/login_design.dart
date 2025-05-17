@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:base_de_datos_universal/colours/colours.dart';
-import 'package:base_de_datos_universal/dahsboard/home_screen.dart';
+import 'package:base_de_datos_universal/dashboard/home_screen.dart';
 import 'package:base_de_datos_universal/MYSQL/db_service.dart';
 
 class LoginDesign extends StatelessWidget {
@@ -48,7 +48,11 @@ class LoginDesign extends StatelessWidget {
                     if (valido) {
                       Navigator.pushReplacement(
                         context,
-                        MaterialPageRoute(builder: (_) => const DashboardPage()),
+                        PageRouteBuilder(
+                          pageBuilder: (_, __, ___) => const DashboardPage(),
+                          transitionDuration: Duration.zero,
+                          reverseTransitionDuration: Duration.zero,
+                        ),
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
@@ -64,7 +68,11 @@ class LoginDesign extends StatelessWidget {
                   onPressed: () {
                     Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => const DashboardPage()),
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const DashboardPage(),
+                        transitionDuration: Duration.zero,
+                        reverseTransitionDuration: Duration.zero,
+                      ),
                     );
                   },
                   child: const Text(
