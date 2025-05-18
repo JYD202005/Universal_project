@@ -4,6 +4,7 @@ import 'package:base_de_datos_universal/colours/colours.dart';
 class RegistrarArticuloFields extends StatelessWidget {
   const RegistrarArticuloFields({super.key});
 
+///////----------------Artículos--------------------//////
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -36,11 +37,14 @@ class RegistrarArticuloFields extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Marca',
-                  prefixIcon: Icon(Icons.business, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.business, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [],
                 onChanged: (_) {},
@@ -51,11 +55,14 @@ class RegistrarArticuloFields extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Línea',
-                  prefixIcon: Icon(Icons.category, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.category, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [],
                 onChanged: (_) {},
@@ -70,11 +77,14 @@ class RegistrarArticuloFields extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Familia',
-                  prefixIcon: Icon(Icons.group_work, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.group_work, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [],
                 onChanged: (_) {},
@@ -85,11 +95,14 @@ class RegistrarArticuloFields extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Proveedor',
-                  prefixIcon: Icon(Icons.local_shipping, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.local_shipping,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [],
                 onChanged: (_) {},
@@ -104,11 +117,14 @@ class RegistrarArticuloFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Precio',
-                  prefixIcon: Icon(Icons.attach_money, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.attach_money,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -118,11 +134,14 @@ class RegistrarArticuloFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Cantidad Inicial',
-                  prefixIcon: Icon(Icons.confirmation_number, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.confirmation_number,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -147,7 +166,8 @@ class RegistrarArticuloFields extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: ProyectColors.primaryGreen,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               // Acción de guardar
@@ -190,7 +210,8 @@ class RegistrarCompraFields extends StatelessWidget {
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
             labelText: 'Artículo',
-            prefixIcon: Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -203,7 +224,8 @@ class RegistrarCompraFields extends StatelessWidget {
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
             labelText: 'Proveedor',
-            prefixIcon: Icon(Icons.local_shipping, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.local_shipping, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -219,11 +241,14 @@ class RegistrarCompraFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Cantidad comprada',
-                  prefixIcon: Icon(Icons.confirmation_number, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.confirmation_number,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -233,11 +258,14 @@ class RegistrarCompraFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Precio unitario',
-                  prefixIcon: Icon(Icons.attach_money, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.attach_money,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -248,7 +276,8 @@ class RegistrarCompraFields extends StatelessWidget {
         TextField(
           decoration: InputDecoration(
             labelText: 'Total acumulado',
-            prefixIcon: Icon(Icons.calculate, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.calculate, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -263,7 +292,8 @@ class RegistrarCompraFields extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: ProyectColors.primaryGreen,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               // Acción de guardar compra
@@ -306,7 +336,8 @@ class RegistrarVentaFields extends StatelessWidget {
         DropdownButtonFormField<String>(
           decoration: InputDecoration(
             labelText: 'Artículo',
-            prefixIcon: Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -322,11 +353,14 @@ class RegistrarVentaFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Cantidad vendida',
-                  prefixIcon: Icon(Icons.confirmation_number, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.confirmation_number,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -336,11 +370,14 @@ class RegistrarVentaFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Precio individual',
-                  prefixIcon: Icon(Icons.attach_money, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.attach_money,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -351,7 +388,8 @@ class RegistrarVentaFields extends StatelessWidget {
         TextField(
           decoration: InputDecoration(
             labelText: 'Total acumulado',
-            prefixIcon: Icon(Icons.calculate, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.calculate, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -377,7 +415,8 @@ class RegistrarVentaFields extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: ProyectColors.primaryGreen,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               // Acción de guardar venta
@@ -434,11 +473,14 @@ class RegistrarProveedorFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Rubro',
-                  prefixIcon: Icon(Icons.category, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.category, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -447,11 +489,14 @@ class RegistrarProveedorFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Categoría',
-                  prefixIcon: Icon(Icons.layers, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.layers, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -464,11 +509,14 @@ class RegistrarProveedorFields extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Familia',
-                  prefixIcon: Icon(Icons.group_work, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.group_work, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [],
                 onChanged: (_) {},
@@ -479,11 +527,14 @@ class RegistrarProveedorFields extends StatelessWidget {
               child: DropdownButtonFormField<String>(
                 decoration: InputDecoration(
                   labelText: 'Línea',
-                  prefixIcon: Icon(Icons.line_style, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.line_style, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 items: const [],
                 onChanged: (_) {},
@@ -495,7 +546,8 @@ class RegistrarProveedorFields extends StatelessWidget {
         TextField(
           decoration: InputDecoration(
             labelText: 'Descripción',
-            prefixIcon: Icon(Icons.description, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.description, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -509,11 +561,14 @@ class RegistrarProveedorFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Código SAT',
-                  prefixIcon: Icon(Icons.qr_code, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.qr_code, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -522,11 +577,14 @@ class RegistrarProveedorFields extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                   labelText: 'Precio estimado',
-                  prefixIcon: Icon(Icons.attach_money, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.attach_money,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -540,7 +598,8 @@ class RegistrarProveedorFields extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: ProyectColors.primaryGreen,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
               // Acción de guardar proveedor

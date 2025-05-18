@@ -58,12 +58,18 @@ class MenuBar extends StatelessWidget {
       },
       labelType: NavigationRailLabelType.all,
       selectedIconTheme: const IconThemeData(color: ProyectColors.primaryGreen),
-      selectedLabelTextStyle: const TextStyle(color: ProyectColors.primaryGreen),
-      unselectedLabelTextStyle: const TextStyle(color: ProyectColors.textSecondary),
+      selectedLabelTextStyle:
+          const TextStyle(color: ProyectColors.primaryGreen),
+      unselectedLabelTextStyle:
+          const TextStyle(color: ProyectColors.textSecondary),
       leading: Column(
         children: [
-          Image.asset('lib/assets/logo_universal.png', height: 120),
-          const Text('La Universal', style: TextStyle(fontSize: 16, color: ProyectColors.textPrimary, fontWeight: FontWeight.bold)),
+          Image.asset('logo_universal.png', height: 120),
+          const Text('La Universal',
+              style: TextStyle(
+                  fontSize: 16,
+                  color: ProyectColors.textPrimary,
+                  fontWeight: FontWeight.bold)),
           const Divider(color: Colors.white24),
         ],
       ),
@@ -83,7 +89,8 @@ class MenuBar extends StatelessWidget {
               itemBuilder: (context) => [
                 const PopupMenuItem<String>(
                   value: 'logout',
-                  child: Text('Cerrar sesión', style: TextStyle(color: ProyectColors.textPrimary)),
+                  child: Text('Cerrar sesión',
+                      style: TextStyle(color: ProyectColors.textPrimary)),
                 ),
               ],
               onSelected: (value) {
@@ -100,7 +107,8 @@ class MenuBar extends StatelessWidget {
               },
             ),
             const SizedBox(height: 8),
-            const Text('Usuario', style: TextStyle(color: ProyectColors.textSecondary)),
+            const Text('Usuario',
+                style: TextStyle(color: ProyectColors.textSecondary)),
             const SizedBox(height: 16),
           ],
         ),

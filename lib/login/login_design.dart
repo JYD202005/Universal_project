@@ -27,18 +27,21 @@ class LoginDesign extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('lib/assets/logo_universal.png', height: 120),
+                Image.asset('logo_universal.png', height: 120),
                 const SizedBox(height: 24),
                 Text('Bienvenido a la Universal', style: titleStyle),
                 const SizedBox(height: 32),
-                _buildInputField('Correo electrónico', Icons.email, controller: correoController),
+                _buildInputField('Correo electrónico', Icons.email,
+                    controller: correoController),
                 const SizedBox(height: 16),
-                _buildInputField('Contraseña', Icons.lock, isPassword: true, controller: contrasenaController),
+                _buildInputField('Contraseña', Icons.lock,
+                    isPassword: true, controller: contrasenaController),
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ProyectColors.primaryGreen,
-                    padding: const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 80, vertical: 16),
                   ),
                   onPressed: () async {
                     final correo = correoController.text.trim();
@@ -56,11 +59,13 @@ class LoginDesign extends StatelessWidget {
                       );
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Credenciales incorrectas')),
+                        const SnackBar(
+                            content: Text('Credenciales incorrectas')),
                       );
                     }
                   },
-                  child: const Text('Iniciar sesión', style: TextStyle(color: ProyectColors.textPrimary)),
+                  child: const Text('Iniciar sesión',
+                      style: TextStyle(color: ProyectColors.textPrimary)),
                 ),
                 const SizedBox(height: 8),
                 // Botón para saltar al dashboard sin login
@@ -77,7 +82,9 @@ class LoginDesign extends StatelessWidget {
                   },
                   child: const Text(
                     'Saltar login',
-                    style: TextStyle(color: ProyectColors.textSecondary, fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                        color: ProyectColors.textSecondary,
+                        fontWeight: FontWeight.bold),
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -115,7 +122,8 @@ class LoginDesign extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: const BorderSide(color: ProyectColors.accentGreen, width: 2),
+          borderSide:
+              const BorderSide(color: ProyectColors.accentGreen, width: 2),
           borderRadius: BorderRadius.circular(12),
         ),
       ),
