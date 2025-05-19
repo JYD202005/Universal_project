@@ -22,9 +22,16 @@ class _DashboardPageState extends State<DashboardPage> {
   final List<String> filters = [
     'Todos',
     'Stock bajo',
-    'Vencidos',
+    'Agotados',
     'Sin proveedor'
   ];
+  //Datos Variables Cuando se inicia la app
+  String usuario = 'José José';
+  String EmpleadosActivos = 180.toString();
+  String VentasDelDia = 1500.toString();
+  String ProductosAgotados = 1.toString();
+  String EntradasRegistradas = 10.toString();
+
   @override
   void initState() {
     super.initState();
@@ -55,8 +62,8 @@ class _DashboardPageState extends State<DashboardPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        '¡Bienvenido, Jose!',
+                      Text(
+                        '¡Bienvenido, ${usuario}!',
                         style: TextStyle(
                             color: ProyectColors.textPrimary,
                             fontSize: 24,
@@ -71,10 +78,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _buildCard('Empleados activos', '120'),
-                          _buildCard('Ventas del Dia', '14'),
-                          _buildCard('Productos Agotados', '250'),
-                          _buildCard('Entradas Registradas', '50'),
+                          _buildCard(
+                              'Empleados activos', '${EmpleadosActivos}'),
+                          _buildCard('Ventas del Dia', '${VentasDelDia}'),
+                          _buildCard(
+                              'Productos Agotados', '${ProductosAgotados}'),
+                          _buildCard(
+                              'Entradas Registradas', '${EntradasRegistradas}'),
                         ],
                       ),
                       const SizedBox(height: 32),
@@ -85,7 +95,25 @@ class _DashboardPageState extends State<DashboardPage> {
                             label: Text(filter),
                             selected: selectedFilter == filter,
                             onSelected: (bool selected) {
-                              setState(() => selectedFilter = filter);
+                              setState(
+                                () => selectedFilter = filter,
+                              );
+                              setState(() {
+                                switch (filter) {
+                                  case 'Todos':
+                                    loadTabla();
+                                    break;
+                                  case 'Stock bajo':
+                                    stockBajo();
+                                    break;
+                                  case 'Agotados':
+                                    vencidos();
+                                    break;
+                                  case 'Sin proveedor':
+                                    sinProveedor();
+                                    break;
+                                }
+                              });
                             },
                             selectedColor: ProyectColors.primaryGreen,
                             labelStyle: TextStyle(
@@ -219,6 +247,11 @@ class _DashboardPageState extends State<DashboardPage> {
                                     color: ProyectColors.textPrimary))),
                         DataColumn(
                             headingRowAlignment: MainAxisAlignment.center,
+                            label: Text('Proveedor',
+                                style: TextStyle(
+                                    color: ProyectColors.textPrimary))),
+                        DataColumn(
+                            headingRowAlignment: MainAxisAlignment.center,
                             label: Text('Estado',
                                 style: TextStyle(
                                     color: ProyectColors.textPrimary))),
@@ -226,11 +259,12 @@ class _DashboardPageState extends State<DashboardPage> {
                       rows: [
                         for (var item in LoadTablaTodo)
                           _buildRow(
-                            item['Clave'],
-                            item['producto'],
-                            item['Familia'],
+                            item['clave'],
+                            item['nombre'],
+                            item['familia'],
                             item['stock_actual'].toString(),
                             item['stock_minimo'].toString(),
+                            item['proveedor'],
                             item['estado'],
                           ),
                       ],
@@ -246,7 +280,7 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 
   DataRow _buildRow(String clave, String prod, String cat, String actual,
-      String minimo, String estado) {
+      String minimo, String proveedor, String estado) {
     Color estadoColor = estado == 'Crítico'
         ? ProyectColors.danger
         : estado == 'Bajo'
@@ -275,6 +309,10 @@ class _DashboardPageState extends State<DashboardPage> {
           child: Text(minimo,
               style: const TextStyle(color: ProyectColors.textPrimary)),
         )),
+        DataCell(Center(
+          child: Text(proveedor ?? 'Sin proveedor',
+              style: const TextStyle(color: ProyectColors.textPrimary)),
+        )),
         DataCell(
           Container(
             alignment: Alignment.center,
@@ -301,39 +339,46 @@ class _DashboardPageState extends State<DashboardPage> {
   void loadTabla() {
     List<Map<String, dynamic>> temp = [
       {
-        'Clave': 'R-1',
-        'producto': 'Cables UTP',
-        'Familia': 'Redes',
+        'clave': 'R-1',
+        'nombre': 'Cables UTP',
+        'familia': 'Redes',
         'stock_actual': 51,
         'stock_minimo': 10,
         'disponible': true,
+        'proveedor': 'Proveedor 1',
       },
       {
-        'Clave': 'R-2',
-        'producto': 'Router TP-Link',
-        'Familia': 'Redes',
+        'clave': 'R-2',
+        'nombre': 'Router TP-Link',
+        'familia': 'Redes',
         'stock_actual': 3,
         'stock_minimo': 5,
+        'disponible': true,
+        'proveedor': 'Proveedor 2',
       },
       {
-        'Clave': 'E-1',
-        'producto': 'Arduino UNO',
-        'Familia': 'Electrónica',
-        'stock_actual': 7,
+        'clave': 'E-1',
+        'nombre': 'Arduino UNO',
+        'familia': 'Electrónica',
+        'stock_actual': 0,
         'stock_minimo': 15,
         'disponible': true,
+        'proveedor': 'Proveedor 3',
       },
       {
-        'Clave': 'I-1',
-        'producto': 'Multímetro',
-        'Familia': 'Instrumentos',
+        'clave': 'I-1',
+        'nombre': 'Multímetro',
+        'familia': 'Instrumentos',
         'stock_actual': 1,
         'stock_minimo': 3,
         'disponible': true,
+        'proveedor': null,
       },
     ];
 
     LoadTablaTodo = temp.map((item) {
+      item['proveedor'] = item['proveedor'] ?? 'Sin proveedor';
+
       int actual = item['stock_actual'];
       int minimo = item['stock_minimo'];
 
@@ -345,10 +390,28 @@ class _DashboardPageState extends State<DashboardPage> {
       } else {
         estado = 'Óptimo'; // verde
       }
-
       item['estado'] = estado;
+
       return item;
     }).toList();
-    print(LoadTablaTodo);
+  }
+
+  void stockBajo() {
+    loadTabla();
+    LoadTablaTodo =
+        LoadTablaTodo.where((item) => item['estado'] == 'Bajo').toList();
+  }
+
+  void vencidos() {
+    loadTabla();
+    LoadTablaTodo =
+        LoadTablaTodo.where((item) => item['stock_actual'] == 0).toList();
+  }
+
+  void sinProveedor() {
+    loadTabla();
+    LoadTablaTodo =
+        LoadTablaTodo.where((item) => item['proveedor'] == 'Sin proveedor')
+            .toList();
   }
 }

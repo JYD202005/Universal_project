@@ -10,6 +10,7 @@ class RegisterMenuScreen extends StatefulWidget {
   State<RegisterMenuScreen> createState() => _RegisterMenuScreenState();
 }
 
+//AppBar Desplacamiento De Submenus
 class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
   @override
   Widget build(BuildContext context) {
@@ -39,9 +40,11 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                     indicatorColor: ProyectColors.primaryGreen,
                     labelColor: ProyectColors.primaryGreen,
                     unselectedLabelColor: ProyectColors.textSecondary,
-                    labelPadding: EdgeInsets.symmetric(horizontal: 24), // Espaciado uniforme
+                    labelPadding: EdgeInsets.symmetric(
+                        horizontal: 24), // Espaciado uniforme
                     tabs: [
-                      Tab(child: Row(
+                      Tab(
+                          child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.add, size: 20),
@@ -49,7 +52,8 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           Text('Artículo'),
                         ],
                       )),
-                      Tab(child: Row(
+                      Tab(
+                          child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.shopping_cart, size: 20),
@@ -57,7 +61,8 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           Text('Compra'),
                         ],
                       )),
-                      Tab(child: Row(
+                      Tab(
+                          child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.attach_money, size: 20),
@@ -65,7 +70,8 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           Text('Venta'),
                         ],
                       )),
-                      Tab(child: Row(
+                      Tab(
+                          child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.local_shipping, size: 20),
@@ -73,7 +79,8 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           Text('Proveedor'),
                         ],
                       )),
-                      Tab(child: Row(
+                      Tab(
+                          child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.group, size: 20),
@@ -81,7 +88,8 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           Text('Cliente'),
                         ],
                       )),
-                      Tab(child: Row(
+                      Tab(
+                          child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(Icons.person, size: 20),
