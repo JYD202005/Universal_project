@@ -35,11 +35,51 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    loadTabla();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      setState(() {
+        loadTabla();
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // Determina cuántos cards por fila según el ancho de pantalla
+    int cardsPerRow;
+    if (screenWidth >= 1400) {
+      cardsPerRow = 4;
+    } else if (screenWidth >= 1100) {
+      cardsPerRow = 2;
+    } else {
+      cardsPerRow = 1;
+    }
+
+    final cardData = [
+      {'title': 'Empleados activos', 'value': EmpleadosActivos},
+      {'title': 'Ventas del Dia', 'value': VentasDelDia},
+      {'title': 'Productos Agotados', 'value': ProductosAgotados},
+      {'title': 'Entradas Registradas', 'value': EntradasRegistradas},
+    ];
+
+    List<Widget> cardRows = [];
+    for (int i = 0; i < cardData.length; i += cardsPerRow) {
+      final rowCards = cardData
+          .skip(i)
+          .take(cardsPerRow)
+          .map((data) => Flexible(
+                flex: 1,
+                child: _buildCard(data['title']!, data['value']!),
+              ))
+          .toList();
+      cardRows.add(Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: rowCards,
+      ));
+      cardRows.add(const SizedBox(height: 16));
+    }
+
     return Scaffold(
       backgroundColor: ProyectColors.surfaceDark,
       body: Row(
@@ -75,19 +115,8 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(color: ProyectColors.textSecondary),
                       ),
                       const SizedBox(height: 24),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          _buildCard(
-                              'Empleados activos', '${EmpleadosActivos}'),
-                          _buildCard('Ventas del Dia', '${VentasDelDia}'),
-                          _buildCard(
-                              'Productos Agotados', '${ProductosAgotados}'),
-                          _buildCard(
-                              'Entradas Registradas', '${EntradasRegistradas}'),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
+                      ...cardRows,
+                      const SizedBox(height: 16),
                       Wrap(
                         spacing: 12,
                         children: filters.map((filter) {
@@ -189,150 +218,197 @@ class _DashboardPageState extends State<DashboardPage> {
 
   //Tabla de productos
   Widget _buildProductTable() {
-    return Center(
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: ProyectColors.primaryGreen),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Define el número de columnas
+        int columnCount = 7;
+        // Deja un pequeño margen para el borde y padding
+        double columnWidth = (constraints.maxWidth - 2) / columnCount;
+
+        return Container(
+          width: double.infinity,
+          child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-          ),
-          child: Scrollbar(
-            controller: _verticalTableScrollController,
-            thumbVisibility: true,
-            child: SingleChildScrollView(
-              controller: _verticalTableScrollController,
-              scrollDirection: Axis.vertical,
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: ProyectColors.primaryGreen),
+                borderRadius: BorderRadius.circular(12),
+              ),
               child: Scrollbar(
-                controller: _horizontalTableScrollController,
+                controller: _verticalTableScrollController,
                 thumbVisibility: true,
                 child: SingleChildScrollView(
-                  controller: _horizontalTableScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(minWidth: 1190, maxWidth: 1200),
-                    child: DataTable(
-                      showCheckboxColumn: false,
-                      dataRowHeight: 70,
-                      headingRowHeight: 60,
-                      columnSpacing: 24,
-                      dividerThickness: 1,
-                      headingRowColor:
-                          MaterialStateProperty.all(ProyectColors.primaryGreen),
-                      columns: [
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Clave',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Producto',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Familia',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Stock actual',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Stock mínimo',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Proveedor',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                        DataColumn(
-                            headingRowAlignment: MainAxisAlignment.center,
-                            label: Text('Estado',
-                                style: TextStyle(
-                                    color: ProyectColors.textPrimary))),
-                      ],
-                      rows: [
-                        for (var item in LoadTablaTodo)
-                          _buildRow(
-                            item['clave'],
-                            item['nombre'],
-                            item['familia'],
-                            item['stock_actual'].toString(),
-                            item['stock_minimo'].toString(),
-                            item['proveedor'],
-                            item['estado'],
-                          ),
-                      ],
+                  controller: _verticalTableScrollController,
+                  scrollDirection: Axis.vertical,
+                  child: SingleChildScrollView(
+                    controller: _horizontalTableScrollController,
+                    scrollDirection: Axis.horizontal,
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minWidth: constraints.maxWidth,
+                        maxWidth: constraints.maxWidth,
+                      ),
+                      child: DataTable(
+                        showCheckboxColumn: false,
+                        dataRowHeight: 70,
+                        headingRowHeight: 60,
+                        columnSpacing: 0,
+                        dividerThickness: 1,
+                        headingRowColor:
+                            MaterialStateProperty.all(ProyectColors.primaryGreen),
+                        columns: [
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Clave',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Producto',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Familia',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Stock actual',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Stock mínimo',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Proveedor',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                          DataColumn(
+                              label: SizedBox(
+                                width: columnWidth,
+                                child: Center(
+                                  child: Text('Estado',
+                                      style: TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                ),
+                              )),
+                        ],
+                        rows: [
+                          for (var item in LoadTablaTodo)
+                            DataRow(
+                              cells: [
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Center(
+                                    child: Text(item['clave'],
+                                        style: const TextStyle(
+                                            color: ProyectColors.textPrimary)),
+                                  ),
+                                )),
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Center(
+                                    child: Text(item['nombre'],
+                                        style: const TextStyle(
+                                            color: ProyectColors.textPrimary)),
+                                  ),
+                                )),
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Center(
+                                    child: Text(item['familia'],
+                                        style: const TextStyle(
+                                            color: ProyectColors.textSecondary)),
+                                  ),
+                                )),
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Center(
+                                    child: Text(item['stock_actual'].toString(),
+                                        style: const TextStyle(
+                                            color: ProyectColors.textPrimary)),
+                                  ),
+                                )),
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Center(
+                                    child: Text(item['stock_minimo'].toString(),
+                                        style: const TextStyle(
+                                            color: ProyectColors.textPrimary)),
+                                  ),
+                                )),
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Center(
+                                    child: Text(item['proveedor'] ?? 'Sin proveedor',
+                                        style: const TextStyle(
+                                            color: ProyectColors.textPrimary)),
+                                  ),
+                                )),
+                                DataCell(SizedBox(
+                                  width: columnWidth,
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    height: 35,
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: item['estado'] == 'Crítico'
+                                          ? ProyectColors.danger
+                                          : item['estado'] == 'Bajo'
+                                              ? ProyectColors.warning
+                                              : ProyectColors.primaryGreen,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        item['estado'],
+                                        style: TextStyle(
+                                            color: ProyectColors.textPrimary,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                )),
+                              ],
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  DataRow _buildRow(String clave, String prod, String cat, String actual,
-      String minimo, String proveedor, String estado) {
-    Color estadoColor = estado == 'Crítico'
-        ? ProyectColors.danger
-        : estado == 'Bajo'
-            ? ProyectColors.warning
-            : ProyectColors.primaryGreen;
-
-    return DataRow(
-      cells: [
-        DataCell(Center(
-          child: Text(clave,
-              style: const TextStyle(color: ProyectColors.textPrimary)),
-        )),
-        DataCell(Center(
-          child: Text(prod,
-              style: const TextStyle(color: ProyectColors.textPrimary)),
-        )),
-        DataCell(Center(
-          child: Text(cat,
-              style: const TextStyle(color: ProyectColors.textSecondary)),
-        )),
-        DataCell(Center(
-          child: Text(actual,
-              style: const TextStyle(color: ProyectColors.textPrimary)),
-        )),
-        DataCell(Center(
-          child: Text(minimo,
-              style: const TextStyle(color: ProyectColors.textPrimary)),
-        )),
-        DataCell(Center(
-          child: Text(proveedor ?? 'Sin proveedor',
-              style: const TextStyle(color: ProyectColors.textPrimary)),
-        )),
-        DataCell(
-          Container(
-            alignment: Alignment.center,
-            height: 35,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: estadoColor,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Center(
-              child: Text(
-                estado,
-                style: TextStyle(
-                    color: ProyectColors.textPrimary,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-          ),
-        ),
-      ],
+        );
+      },
     );
   }
 

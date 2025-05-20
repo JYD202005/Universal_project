@@ -211,3 +211,4 @@ class RegistrarUsuarioForm extends StatelessWidget {
             style: TextStyle(color: ProyectColors.textPrimary)));
   }
 }
+
