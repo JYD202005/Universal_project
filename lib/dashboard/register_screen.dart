@@ -70,7 +70,6 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           Text('Compra'),
                         ],
                       )),*/
-
                       Tab(
                           child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -108,7 +107,7 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                     //RegistrarCompraForm(),
                     RegistrarProveedorForm(),
                     RegistrarClienteForm(),
-                    RegistrarUsuarioForm(),
+                    RegistrarTagForm(),
                   ],
                 ),
               ),
@@ -202,12 +201,12 @@ class RegistrarClienteForm extends StatelessWidget {
   }
 }
 
-class RegistrarUsuarioForm extends StatelessWidget {
-  const RegistrarUsuarioForm({super.key});
+class RegistrarTagForm extends StatelessWidget {
+  const RegistrarTagForm({super.key});
   @override
   Widget build(BuildContext context) {
     return const Center(
-        child: Text('Formulario Usuario',
+        child: Text('Formulario tag',
             style: TextStyle(color: ProyectColors.textPrimary)));
   }
 }

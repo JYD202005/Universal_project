@@ -1,4 +1,3 @@
-import 'package:base_de_datos_universal/login/login_design.dart';
 import 'package:flutter/material.dart';
 import 'package:base_de_datos_universal/colours/colours.dart';
 
@@ -24,11 +23,11 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   String? _selectedMarca;
   List<Map<String, dynamic>> _loadFamilia = [];
   String? _selectedFamilia;
-  String? _sufijo;
   List<Map<String, dynamic>> _loadLinea = [];
   String? _selectedLinea;
   List<Map<String, dynamic>> _loadProveedor = [];
   String? _selectedProveedor;
+
   //Lista Para guardar los artículos
   List<Map<String, dynamic>> _guardardo = [];
 
@@ -340,8 +339,6 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                 ),
                 onChanged: (Value) {
                   setState(() {
-                    _sufijo = _loadFamilia.firstWhere(
-                        (item) => item['id'].toString() == Value)['Prefijo'];
                     _selectedFamilia = Value;
                   });
                 },
@@ -658,9 +655,17 @@ void _mostrarCantidadMinimaPopup(
 }
 */
 ///////----------------Ventas--------------------//////
-
-class RegistrarVentaFields extends StatelessWidget {
+//Por Modificar
+class RegistrarVentaFields extends StatefulWidget {
   const RegistrarVentaFields({super.key});
+
+  @override
+  State<RegistrarVentaFields> createState() => _RegistrarVentaFieldsState();
+}
+
+class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
+  bool _checked = false;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -741,15 +746,51 @@ class RegistrarVentaFields extends StatelessWidget {
           keyboardType: TextInputType.number,
         ),
         const SizedBox(height: 16),
-        TextField(
-          decoration: InputDecoration(
-            labelText: 'Nombre del cliente (opcional)',
-            prefixIcon: Icon(Icons.person, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
+        Row(
+          children: [
+            Expanded(
+              child: Row(
+                spacing: 16,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    '¿Es un cliente Frecuente?',
+                    style: TextStyle(
+                      color: ProyectColors.textPrimary,
+                      fontSize: 16,
+                    ),
+                  ),
+                  Checkbox(
+                    value: _checked,
+                    checkColor: ProyectColors.backgroundDark,
+                    activeColor: ProyectColors.primaryGreen,
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() {
+                          _checked = value;
+                        });
+                      }
+                    },
+                  )
+                ],
+              ),
+            ),
+            Expanded(
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: 'Nombre del cliente (opcional)',
+                  prefixIcon:
+                      Icon(Icons.person, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
+                  filled: true,
+                  fillColor: ProyectColors.surfaceDark,
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -782,8 +823,91 @@ class RegistrarVentaFields extends StatelessWidget {
 
 ///////----------------Proveedores--------------------//////
 
-class RegistrarProveedorFields extends StatelessWidget {
+class RegistrarProveedorFields extends StatefulWidget {
   const RegistrarProveedorFields({super.key});
+
+  @override
+  State<RegistrarProveedorFields> createState() =>
+      _RegistrarProveedorFieldsState();
+}
+
+class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
+  //controller
+  final TextEditingController _nombre = TextEditingController();
+  final TextEditingController _rubro = TextEditingController();
+  final TextEditingController _descripcion = TextEditingController();
+  final TextEditingController _codigoSAT = TextEditingController();
+  final TextEditingController _precioEstimado = TextEditingController();
+  //Cargar dropdown de marcas, familias y líneas
+  List<Map<String, dynamic>> _loadMarca = [];
+  String? _selectedMarca;
+  List<Map<String, dynamic>> _loadFamilia = [];
+  String? _selectedFamilia;
+  List<Map<String, dynamic>> _loadLinea = [];
+  String? _selectedLinea;
+  //Cargar dropdown de proveedores
+  void _loadDrops() async {
+    _loadMarca = [
+      {'id': 1, 'name': 'Marca 1'},
+      {'id': 2, 'name': 'Marca 2'},
+      {'id': 3, 'name': 'Marca 3'},
+    ];
+    _loadFamilia = [
+      {'id': 1, 'name': 'Familia 1'},
+      {'id': 2, 'name': 'Familia 2'},
+      {'id': 3, 'name': 'Familia 3'}
+    ];
+    _loadLinea = [
+      {'id': 1, 'name': 'Línea 1'},
+      {'id': 2, 'name': 'Línea 2'},
+      {'id': 3, 'name': 'Línea 3'},
+    ];
+  }
+
+  //Guardar el proveedor
+  List<Map<String, dynamic>> _guardarProvee = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDrops();
+  }
+
+  void _guardar() {
+    try {
+      if (!restricciones()) return;
+      int cantidadAntes = _guardarProvee.length;
+      //Guardar el proveedor
+      _guardarProvee.add({
+        'Nombre': _nombre.text,
+        'Rubro': _rubro.text,
+        'Marca': _selectedMarca,
+        'Familia': _selectedFamilia,
+        'Linea': _selectedLinea,
+        'Descripcion': _descripcion.text,
+        'CodigoSAT': _codigoSAT.text,
+        'PrecioEstimado': double.parse(_precioEstimado.text),
+      });
+      if (_guardarProvee.length > cantidadAntes) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Proveedor guardado con éxito'),
+          ),
+        );
+        print(_guardarProvee);
+        Limpiar();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Error al guardar el proveedor'),
+          ),
+        );
+      }
+    } catch (e) {
+      print(e);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -799,10 +923,13 @@ class RegistrarProveedorFields extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 24),
+        //Nombre del proveedor
         TextField(
+          controller: _nombre,
+          style: const TextStyle(color: ProyectColors.textPrimary),
           decoration: InputDecoration(
             labelText: 'Nombre del proveedor',
-            prefixIcon: Icon(Icons.business, color: ProyectColors.primaryGreen),
+            prefixIcon: Icon(Icons.label, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -812,8 +939,11 @@ class RegistrarProveedorFields extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: [
+            //Rubro
             Expanded(
               child: TextField(
+                controller: _rubro,
+                style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Rubro',
                   prefixIcon:
@@ -828,12 +958,15 @@ class RegistrarProveedorFields extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
+            //Marca
             Expanded(
-              child: TextField(
+              child: DropdownButtonFormField<String>(
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                dropdownColor: ProyectColors.surfaceDark,
                 decoration: InputDecoration(
-                  labelText: 'Categoría',
+                  labelText: 'Marca',
                   prefixIcon:
-                      Icon(Icons.layers, color: ProyectColors.primaryGreen),
+                      Icon(Icons.business, color: ProyectColors.primaryGreen),
                   labelStyle:
                       const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
@@ -841,6 +974,18 @@ class RegistrarProveedorFields extends StatelessWidget {
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
+                value: _selectedMarca,
+                items: _loadMarca
+                    .map((item) => DropdownMenuItem<String>(
+                          value: item['id'].toString(),
+                          child: Text(item['name']),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedMarca = value;
+                  });
+                },
               ),
             ),
           ],
@@ -848,8 +993,11 @@ class RegistrarProveedorFields extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: [
+            //Familia
             Expanded(
               child: DropdownButtonFormField<String>(
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                dropdownColor: ProyectColors.surfaceDark,
                 decoration: InputDecoration(
                   labelText: 'Familia',
                   prefixIcon:
@@ -861,13 +1009,26 @@ class RegistrarProveedorFields extends StatelessWidget {
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                items: const [],
-                onChanged: (_) {},
+                value: _selectedFamilia,
+                items: _loadFamilia
+                    .map((item) => DropdownMenuItem<String>(
+                          value: item['id'].toString(),
+                          child: Text(item['name']),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedFamilia = value;
+                  });
+                },
               ),
             ),
             const SizedBox(width: 16),
+            //Linea
             Expanded(
               child: DropdownButtonFormField<String>(
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                dropdownColor: ProyectColors.surfaceDark,
                 decoration: InputDecoration(
                   labelText: 'Línea',
                   prefixIcon:
@@ -879,14 +1040,27 @@ class RegistrarProveedorFields extends StatelessWidget {
                   border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12)),
                 ),
-                items: const [],
-                onChanged: (_) {},
+                value: _selectedLinea,
+                items: _loadLinea
+                    .map((item) => DropdownMenuItem<String>(
+                          value: item['id'].toString(),
+                          child: Text(item['name']),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedLinea = value;
+                  });
+                },
               ),
             ),
           ],
         ),
         const SizedBox(height: 16),
+        //Descripción
         TextField(
+          controller: _descripcion,
+          style: const TextStyle(color: ProyectColors.textPrimary),
           decoration: InputDecoration(
             labelText: 'Descripción',
             prefixIcon:
@@ -900,8 +1074,11 @@ class RegistrarProveedorFields extends StatelessWidget {
         const SizedBox(height: 16),
         Row(
           children: [
+            //Código SAT
             Expanded(
               child: TextField(
+                controller: _codigoSAT,
+                style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Código SAT',
                   prefixIcon:
@@ -916,8 +1093,11 @@ class RegistrarProveedorFields extends StatelessWidget {
               ),
             ),
             const SizedBox(width: 16),
+            //Precio estimado
             Expanded(
               child: TextField(
+                controller: _precioEstimado,
+                style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Precio estimado',
                   prefixIcon: Icon(Icons.attach_money,
@@ -935,6 +1115,7 @@ class RegistrarProveedorFields extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
+        //Botón de guardar
         SizedBox(
           width: double.infinity,
           child: ElevatedButton.icon(
@@ -945,7 +1126,7 @@ class RegistrarProveedorFields extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: () {
-              // Acción de guardar proveedor
+              _guardar();
             },
             icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
             label: const Text(
@@ -960,5 +1141,56 @@ class RegistrarProveedorFields extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  void Limpiar() {
+    _nombre.clear();
+    _rubro.clear();
+    _descripcion.clear();
+    _codigoSAT.clear();
+    _precioEstimado.clear();
+    setState(() {
+      _selectedMarca = null;
+      _selectedFamilia = null;
+      _selectedLinea = null;
+    });
+  }
+
+  bool restricciones() {
+    if (_nombre.text.isEmpty ||
+        _rubro.text.isEmpty ||
+        _descripcion.text.isEmpty ||
+        _codigoSAT.text.isEmpty ||
+        _precioEstimado.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor complete todos los campos'),
+        ),
+      );
+      return false;
+    }
+
+    if (_selectedMarca == null ||
+        _selectedFamilia == null ||
+        _selectedLinea == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor seleccione todos los campos'),
+        ),
+      );
+      return false;
+    }
+
+    final double? precio = double.tryParse(_precioEstimado.text);
+
+    if (precio == null || precio <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Precio deben ser números y positivo'),
+        ),
+      );
+      return false;
+    }
+    return true;
   }
 }
