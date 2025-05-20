@@ -26,7 +26,7 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
           ),
           Expanded(
             child: DefaultTabController(
-              length: 6,
+              length: 5,
               child: Scaffold(
                 backgroundColor: ProyectColors.surfaceDark,
                 appBar: AppBar(
@@ -47,12 +47,21 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
+                          Icon(Icons.attach_money, size: 20),
+                          SizedBox(width: 8),
+                          Text('Venta'),
+                        ],
+                      )),
+                      Tab(
+                          child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
                           Icon(Icons.add, size: 20),
                           SizedBox(width: 8),
                           Text('Artículo'),
                         ],
                       )),
-                      Tab(
+                      /*Tab(
                           child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -60,16 +69,8 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                           SizedBox(width: 8),
                           Text('Compra'),
                         ],
-                      )),
-                      Tab(
-                          child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.attach_money, size: 20),
-                          SizedBox(width: 8),
-                          Text('Venta'),
-                        ],
-                      )),
+                      )),*/
+
                       Tab(
                           child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -85,16 +86,16 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                         children: [
                           Icon(Icons.group, size: 20),
                           SizedBox(width: 8),
-                          Text('Cliente'),
+                          Text('Cliente Frecuente'),
                         ],
                       )),
                       Tab(
                           child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.person, size: 20),
+                          Icon(Icons.tag, size: 20),
                           SizedBox(width: 8),
-                          Text('Usuario'),
+                          Text('Etiquetas Productos'),
                         ],
                       )),
                     ],
@@ -102,9 +103,9 @@ class _RegisterMenuScreenState extends State<RegisterMenuScreen> {
                 ),
                 body: const TabBarView(
                   children: [
-                    RegistrarArticuloForm(),
-                    RegistrarCompraForm(),
                     RegistrarVentaForm(),
+                    RegistrarArticuloForm(),
+                    //RegistrarCompraForm(),
                     RegistrarProveedorForm(),
                     RegistrarClienteForm(),
                     RegistrarUsuarioForm(),
@@ -137,7 +138,7 @@ class RegistrarArticuloForm extends StatelessWidget {
   }
 }
 
-class RegistrarCompraForm extends StatelessWidget {
+/*class RegistrarCompraForm extends StatelessWidget {
   const RegistrarCompraForm({super.key});
   @override
   Widget build(BuildContext context) {
@@ -153,7 +154,7 @@ class RegistrarCompraForm extends StatelessWidget {
       ),
     );
   }
-}
+}*/
 
 class RegistrarVentaForm extends StatelessWidget {
   const RegistrarVentaForm({super.key});

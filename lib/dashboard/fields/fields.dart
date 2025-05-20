@@ -60,45 +60,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   //Guardar el artículo
   void _guardarArticulo() async {
     try {
-      if (_nombre.text.isEmpty ||
-          _precio.text.isEmpty ||
-          _cantidad.text.isEmpty ||
-          _codigo.text.isEmpty) {
-        // Manejo de errores
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor complete todos los campos'),
-          ),
-        );
-
-        return;
-      }
-
-      if (_selectedMarca == null ||
-          _selectedFamilia == null ||
-          _selectedLinea == null ||
-          _selectedProveedor == null) {
-        // Manejo de errores
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor seleccione todos los campos'),
-          ),
-        );
-        return;
-      }
-      // Validar que sean numéricos y positivos
-      final double? precio = double.tryParse(_precio.text);
-      final int? cantidad = int.tryParse(_cantidad.text);
-
-      if (precio == null || precio < 0 || cantidad == null || cantidad < 0) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Precio, cantidad y mínima deben ser números positivos'),
-          ),
-        );
-        return;
-      }
+      if (!restricciones()) return;
 
       if (_minimaController.text.isEmpty) {
         _mostrarCantidadMinimaPopup(
@@ -146,6 +108,19 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
       int cantidadAntes = _guardardo.length;
       // Generar nueva clave
       final nuevaClave = '$prefijo${maxNumero + 1}';
+
+      int actual = int.parse(_cantidad.text);
+      int minimo = int.parse(_minimaController.text);
+
+      String estado;
+      if (actual * 2 <= minimo) {
+        estado = 'Crítico';
+      } else if (actual < minimo) {
+        estado = 'Bajo';
+      } else {
+        estado = 'Óptimo';
+      }
+
       _guardardo.add({
         'Clave': nuevaClave,
         'nombre': _nombre.text,
@@ -157,14 +132,9 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
         'cantidad': int.parse(_cantidad.text),
         'cantidad_minima': int.parse(_minimaController.text),
         'codigo': _codigo.text,
+        'Estado': estado,
         'Disponible': true,
       });
-      // Mostrar mensaje de éxito
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Artículo guardado con éxito'),
-        ),
-      );
       // Verificar si se guardó
       if (_guardardo.length > cantidadAntes) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -178,7 +148,6 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Error al guardar el artículo'),
-            backgroundColor: Colors.red,
           ),
         );
       }
@@ -202,6 +171,47 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
     });
   }
 
+  bool restricciones() {
+    if (_nombre.text.isEmpty ||
+        _precio.text.isEmpty ||
+        _cantidad.text.isEmpty ||
+        _codigo.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor complete todos los campos'),
+        ),
+      );
+      return false; // <-- IMPORTANTE
+    }
+
+    if (_selectedMarca == null ||
+        _selectedFamilia == null ||
+        _selectedLinea == null ||
+        _selectedProveedor == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor seleccione todos los campos'),
+        ),
+      );
+      return false;
+    }
+
+    final double? precio = double.tryParse(_precio.text);
+    final int? cantidad = int.tryParse(_cantidad.text);
+
+    if (precio == null || precio <= 0 || cantidad == null || cantidad <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Precio, cantidad y mínima deben ser números positivos'),
+        ),
+      );
+      return false;
+    }
+
+    return true; // <-- Si todo está bien
+  }
+
   @override
   void initState() {
     super.initState();
@@ -223,8 +233,8 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
           ),
         ),
         const SizedBox(height: 24),
+        //Nombre del artículo
         TextField(
-          //Nombre del artículo
           controller: _nombre,
           style: const TextStyle(color: ProyectColors.textPrimary),
           decoration: InputDecoration(
@@ -379,7 +389,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                 controller: _precio,
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
-                  labelText: 'Precio',
+                  labelText: 'Precio Unitario',
                   prefixIcon: Icon(Icons.attach_money,
                       color: ProyectColors.primaryGreen),
                   labelStyle:
@@ -523,7 +533,7 @@ void _mostrarCantidadMinimaPopup(
 
 ///////----------------Compras--------------------//////
 
-class RegistrarCompraFields extends StatelessWidget {
+/*class RegistrarCompraFields extends StatelessWidget {
   const RegistrarCompraFields({super.key});
   @override
   Widget build(BuildContext context) {
@@ -646,7 +656,7 @@ class RegistrarCompraFields extends StatelessWidget {
     );
   }
 }
-
+*/
 ///////----------------Ventas--------------------//////
 
 class RegistrarVentaFields extends StatelessWidget {

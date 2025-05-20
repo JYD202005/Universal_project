@@ -23,7 +23,7 @@ class _DashboardPageState extends State<DashboardPage> {
     'Todos',
     'Stock bajo',
     'Agotados',
-    'Sin proveedor'
+    'Deshabilitados',
   ];
   //Datos Variables Cuando se inicia la app
   String usuario = 'José José';
@@ -109,8 +109,8 @@ class _DashboardPageState extends State<DashboardPage> {
                                   case 'Agotados':
                                     vencidos();
                                     break;
-                                  case 'Sin proveedor':
-                                    sinProveedor();
+                                  case 'Deshabilitados':
+                                    deshabilitado();
                                     break;
                                 }
                               });
@@ -344,7 +344,8 @@ class _DashboardPageState extends State<DashboardPage> {
         'familia': 'Redes',
         'stock_actual': 51,
         'stock_minimo': 10,
-        'disponible': true,
+        'disponible': false,
+        'estado': 'Bajo',
         'proveedor': 'Proveedor 1',
       },
       {
@@ -354,6 +355,7 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 3,
         'stock_minimo': 5,
         'disponible': true,
+        'estado': 'Óptimo',
         'proveedor': 'Proveedor 2',
       },
       {
@@ -363,6 +365,7 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 0,
         'stock_minimo': 15,
         'disponible': true,
+        'estado': 'Crítico',
         'proveedor': 'Proveedor 3',
       },
       {
@@ -372,28 +375,22 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 1,
         'stock_minimo': 3,
         'disponible': true,
-        'proveedor': null,
+        'estado': 'Bajo',
+        'proveedor': 'sin proveedor',
       },
     ];
-
-    LoadTablaTodo = temp.map((item) {
-      item['proveedor'] = item['proveedor'] ?? 'Sin proveedor';
-
-      int actual = item['stock_actual'];
-      int minimo = item['stock_minimo'];
-
-      String estado;
-      if (actual * 2 <= minimo) {
-        estado = 'Crítico'; // rojo
-      } else if (actual < minimo) {
-        estado = 'Bajo'; // amarillo
-      } else {
-        estado = 'Óptimo'; // verde
-      }
-      item['estado'] = estado;
-
-      return item;
-    }).toList();
+    switch (selectedFilter) {
+      case 'Todos':
+        temp = temp.where((item) => item['disponible'] == true).toList();
+        break;
+      case 'Stock bajo':
+        temp = temp.where((item) => item['disponible'] == true).toList();
+        break;
+      case 'Agotados':
+        temp = temp.where((item) => item['disponible'] == true).toList();
+        break;
+    }
+    LoadTablaTodo = temp;
   }
 
   void stockBajo() {
@@ -408,10 +405,9 @@ class _DashboardPageState extends State<DashboardPage> {
         LoadTablaTodo.where((item) => item['stock_actual'] == 0).toList();
   }
 
-  void sinProveedor() {
+  void deshabilitado() {
     loadTabla();
     LoadTablaTodo =
-        LoadTablaTodo.where((item) => item['proveedor'] == 'Sin proveedor')
-            .toList();
+        LoadTablaTodo.where((item) => item['disponible'] == false).toList();
   }
 }
