@@ -210,3 +210,4 @@ class RegistrarTagForm extends StatelessWidget {
             style: TextStyle(color: ProyectColors.textPrimary)));
   }
 }
+
