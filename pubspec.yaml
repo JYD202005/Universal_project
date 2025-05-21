@@ -10,7 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   mysql1: ^0.20.0
+<<<<<<< HEAD
   supabase_flutter: ^2.9.0
+=======
+>>>>>>> origin/Diseño
 
 dev_dependencies:
   flutter_test:

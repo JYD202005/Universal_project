@@ -29,7 +29,11 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   String? _selectedProveedor;
 
   //Lista Para guardar los artículos
+<<<<<<< HEAD
   List<Map<String, dynamic>> _guardardo = [];
+=======
+  final List<Map<String, dynamic>> _guardardo = [];
+>>>>>>> origin/Diseño
 
   //Metodo para cargar los dropdowns
   //cambiar lo de adentro por las variables de la base de datos
@@ -1131,7 +1135,11 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
   }
 
   //Guardar el proveedor
+<<<<<<< HEAD
   List<Map<String, dynamic>> _guardarProvee = [];
+=======
+  final List<Map<String, dynamic>> _guardarProvee = [];
+>>>>>>> origin/Diseño
 
   @override
   void initState() {
@@ -1460,3 +1468,231 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
     return true;
   }
 }
+<<<<<<< HEAD
+=======
+
+///////----------------Clientes Frecuentes--------------------//////
+class RegistrarClienteFrecuenteFields extends StatefulWidget {
+  const RegistrarClienteFrecuenteFields({super.key});
+
+  @override
+  State<RegistrarClienteFrecuenteFields> createState() => _RegistrarClienteFrecuenteFieldsState();
+}
+
+class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecuenteFields> {
+  final TextEditingController _nombre = TextEditingController();
+  final TextEditingController _apellidoPat = TextEditingController();
+  final TextEditingController _apellidoMat = TextEditingController();
+  final TextEditingController _numTel = TextEditingController();
+  final TextEditingController _rfc = TextEditingController();
+  final TextEditingController _domicilio = TextEditingController();
+  final TextEditingController _regimenFiscal = TextEditingController();
+
+  final List<Map<String, dynamic>> _clientes = [];
+
+  void _guardar() {
+    if (!restricciones()) return;
+    int cantidadAntes = _clientes.length;
+    _clientes.add({
+      'nombre': _nombre.text,
+      'apellido_pat': _apellidoPat.text,
+      'apellido_mat': _apellidoMat.text,
+      'num_tel': _numTel.text,
+      'rfc': _rfc.text,
+      'domicilio': _domicilio.text,
+      'regimen_fiscal': _regimenFiscal.text,
+    });
+    if (_clientes.length > cantidadAntes) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cliente guardado con éxito')),
+      );
+      Limpiar();
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error al guardar el cliente')),
+      );
+    }
+  }
+
+  void Limpiar() {
+    _nombre.clear();
+    _apellidoPat.clear();
+    _apellidoMat.clear();
+    _numTel.clear();
+    _rfc.clear();
+    _domicilio.clear();
+    _regimenFiscal.clear();
+  }
+
+  bool restricciones() {
+    if (_nombre.text.isEmpty ||
+        _apellidoPat.text.isEmpty ||
+        _apellidoMat.text.isEmpty ||
+        _numTel.text.isEmpty ||
+        _rfc.text.isEmpty ||
+        _domicilio.text.isEmpty ||
+        _regimenFiscal.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor complete todos los campos')),
+      );
+      return false;
+    }
+    if (int.tryParse(_numTel.text) == null || _numTel.text.length < 7) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Número de teléfono inválido')),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Registrar Cliente Frecuente',
+          style: TextStyle(
+            color: ProyectColors.primaryGreen,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _nombre,
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Nombre',
+                  prefixIcon: Icon(Icons.person, color: ProyectColors.primaryGreen),
+                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  filled: true,
+                  fillColor: ProyectColors.surfaceDark,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextField(
+                controller: _apellidoPat,
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Apellido paterno',
+                  prefixIcon: Icon(Icons.person_outline, color: ProyectColors.primaryGreen),
+                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  filled: true,
+                  fillColor: ProyectColors.surfaceDark,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextField(
+                controller: _apellidoMat,
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Apellido materno',
+                  prefixIcon: Icon(Icons.person_outline, color: ProyectColors.primaryGreen),
+                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  filled: true,
+                  fillColor: ProyectColors.surfaceDark,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: TextField(
+                controller: _numTel,
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'Número de teléfono',
+                  prefixIcon: Icon(Icons.phone, color: ProyectColors.primaryGreen),
+                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  filled: true,
+                  fillColor: ProyectColors.surfaceDark,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: TextField(
+                controller: _rfc,
+                style: const TextStyle(color: ProyectColors.textPrimary),
+                decoration: InputDecoration(
+                  labelText: 'RFC',
+                  prefixIcon: Icon(Icons.badge, color: ProyectColors.primaryGreen),
+                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  filled: true,
+                  fillColor: ProyectColors.surfaceDark,
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _domicilio,
+          style: const TextStyle(color: ProyectColors.textPrimary),
+          decoration: InputDecoration(
+            labelText: 'Domicilio',
+            prefixIcon: Icon(Icons.home, color: ProyectColors.primaryGreen),
+            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+            filled: true,
+            fillColor: ProyectColors.surfaceDark,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _regimenFiscal,
+          style: const TextStyle(color: ProyectColors.textPrimary),
+          decoration: InputDecoration(
+            labelText: 'Régimen fiscal',
+            prefixIcon: Icon(Icons.account_balance, color: ProyectColors.primaryGreen),
+            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+            filled: true,
+            fillColor: ProyectColors.surfaceDark,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ProyectColors.primaryGreen,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: _guardar,
+            icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+            label: const Text(
+              'Guardar Cliente',
+              style: TextStyle(
+                color: ProyectColors.backgroundDark,
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+>>>>>>> origin/Diseño

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:base_de_datos_universal/login/login_design.dart';
@@ -23,4 +24,14 @@ class MyApp extends StatelessWidget {
       home: LoginDesign(),
     );
   }
+=======
+import 'package:base_de_datos_universal/login/login_design.dart';
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MaterialApp(
+    debugShowCheckedModeBanner: false,
+    home: LoginDesign(),
+  ));
+>>>>>>> origin/Diseño
 }

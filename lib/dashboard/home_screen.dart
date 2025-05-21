@@ -103,7 +103,11 @@ class _DashboardPageState extends State<DashboardPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
+<<<<<<< HEAD
                         '¡Bienvenido, ${usuario}!',
+=======
+                        '¡Bienvenido, $usuario!',
+>>>>>>> origin/Diseño
                         style: TextStyle(
                             color: ProyectColors.textPrimary,
                             fontSize: 24,
@@ -228,7 +232,11 @@ class _DashboardPageState extends State<DashboardPage> {
         double stateColumnWidth = 100; 
         
 
+<<<<<<< HEAD
         return Container(
+=======
+        return SizedBox(
+>>>>>>> origin/Diseño
           width: double.infinity,
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
@@ -258,7 +266,11 @@ class _DashboardPageState extends State<DashboardPage> {
                         columnSpacing: 0,
                         dividerThickness: 1,
                         headingRowColor:
+<<<<<<< HEAD
                             MaterialStateProperty.all(ProyectColors.primaryGreen),
+=======
+                            WidgetStateProperty.all(ProyectColors.primaryGreen),
+>>>>>>> origin/Diseño
                         columns: [
                           DataColumn(
                               label: SizedBox(

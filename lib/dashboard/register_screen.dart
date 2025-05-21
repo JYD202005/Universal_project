@@ -195,9 +195,23 @@ class RegistrarClienteForm extends StatelessWidget {
   const RegistrarClienteForm({super.key});
   @override
   Widget build(BuildContext context) {
+<<<<<<< HEAD
     return const Center(
         child: Text('Formulario Cliente',
             style: TextStyle(color: ProyectColors.textPrimary)));
+=======
+    return Center(
+      child: Card(
+        color: ProyectColors.backgroundDark,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: RegistrarClienteFrecuenteFields(), // <--- Aquí usas el widget externo
+        ),
+      ),
+    );
+>>>>>>> origin/Diseño
   }
 }
 
