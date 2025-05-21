@@ -224,6 +224,9 @@ class _DashboardPageState extends State<DashboardPage> {
         int columnCount = 7;
         // Deja un pequeño margen para el borde y padding
         double columnWidth = (constraints.maxWidth - 2) / columnCount;
+        // Ajusta el ancho para la columna state
+        double stateColumnWidth = 100; 
+        
 
         return Container(
           width: double.infinity,
@@ -313,7 +316,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               )),
                           DataColumn(
                               label: SizedBox(
-                                width: columnWidth,
+                                width: stateColumnWidth,
                                 child: Center(
                                   child: Text('Estado',
                                       style: TextStyle(
@@ -374,7 +377,7 @@ class _DashboardPageState extends State<DashboardPage> {
                                   ),
                                 )),
                                 DataCell(SizedBox(
-                                  width: columnWidth,
+                                  width: stateColumnWidth,
                                   child: Container(
                                     alignment: Alignment.center,
                                     height: 35,
@@ -387,12 +390,14 @@ class _DashboardPageState extends State<DashboardPage> {
                                               : ProyectColors.primaryGreen,
                                       borderRadius: BorderRadius.circular(8),
                                     ),
-                                    child: Center(
+                                    child: FittedBox(
+                                      fit: BoxFit.scaleDown,
                                       child: Text(
                                         item['estado'],
                                         style: TextStyle(
-                                            color: ProyectColors.textPrimary,
-                                            fontWeight: FontWeight.bold),
+                                          color: ProyectColors.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
                                   ),

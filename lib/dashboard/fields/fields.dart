@@ -528,134 +528,7 @@ void _mostrarCantidadMinimaPopup(
   );
 }
 
-///////----------------Compras--------------------//////
-
-/*class RegistrarCompraFields extends StatelessWidget {
-  const RegistrarCompraFields({super.key});
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Registrar Compra',
-          style: TextStyle(
-            color: ProyectColors.primaryGreen,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 24),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: 'Artículo',
-            prefixIcon:
-                Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          items: const [],
-          onChanged: (_) {},
-        ),
-        const SizedBox(height: 16),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: 'Proveedor',
-            prefixIcon:
-                Icon(Icons.local_shipping, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          items: const [],
-          onChanged: (_) {},
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Cantidad comprada',
-                  prefixIcon: Icon(Icons.confirmation_number,
-                      color: ProyectColors.primaryGreen),
-                  labelStyle:
-                      const TextStyle(color: ProyectColors.textSecondary),
-                  filled: true,
-                  fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Precio unitario',
-                  prefixIcon: Icon(Icons.attach_money,
-                      color: ProyectColors.primaryGreen),
-                  labelStyle:
-                      const TextStyle(color: ProyectColors.textSecondary),
-                  filled: true,
-                  fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          decoration: InputDecoration(
-            labelText: 'Total acumulado',
-            prefixIcon:
-                Icon(Icons.calculate, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ProyectColors.primaryGreen,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              // Acción de guardar compra
-            },
-            icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
-            label: const Text(
-              'Guardar Compra',
-              style: TextStyle(
-                color: ProyectColors.backgroundDark,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-*/
 ///////----------------Ventas--------------------//////
-//Por Modificar
 class RegistrarVentaFields extends StatefulWidget {
   const RegistrarVentaFields({super.key});
 
@@ -664,159 +537,552 @@ class RegistrarVentaFields extends StatefulWidget {
 }
 
 class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
-  bool _checked = false;
+  String? _selectedArticulo;
+  int _cantidad = 1;
+  final TextEditingController _cantidadController = TextEditingController(text: '1');
+  final List<Map<String, dynamic>> _carrito = [];
+
+  // Artículos simulados
+  final List<Map<String, dynamic>> _articulos = [
+    {'id': '1', 'nombre': 'Cable UTP', 'precio': 50.0},
+    {'id': '2', 'nombre': 'Router TP-Link', 'precio': 800.0},
+    {'id': '3', 'nombre': 'Arduino UNO', 'precio': 350.0},
+  ];
+
+  // Métodos de pago simulados
+  final List<String> _metodosPago = ['Efectivo', 'Tarjeta Visa'];
+  String? _metodoPagoSeleccionado;
+
+  // Controladores para los campos de tarjeta
+  final TextEditingController _numeroTarjeta = TextEditingController();
+  final TextEditingController _fechaVencimiento = TextEditingController();
+  final TextEditingController _cvv = TextEditingController();
+  final TextEditingController _nombreTitular = TextEditingController();
+  final TextEditingController _direccion = TextEditingController();
+  final TextEditingController _correo = TextEditingController();
+  final TextEditingController _telefono = TextEditingController();
+
+  double get _precioUnitario {
+    final articulo = _articulos.firstWhere(
+      (a) => a['id'] == _selectedArticulo,
+      orElse: () => {},
+    );
+    return articulo['precio'] ?? 0.0;
+  }
+
+  String get _nombreArticulo {
+    final articulo = _articulos.firstWhere(
+      (a) => a['id'] == _selectedArticulo,
+      orElse: () => {},
+    );
+    return articulo['nombre'] ?? '';
+  }
+
+  double get _precioTotal {
+    double total = 0.0;
+    for (var item in _carrito) {
+      total += (item['precio'] as double) * (item['cantidad'] as int);
+    }
+    return total;
+  }
+
+  void _agregarAlCarrito() {
+    final parsedCantidad = int.tryParse(_cantidadController.text);
+    if (_selectedArticulo == null || parsedCantidad == null || parsedCantidad <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Selecciona un artículo y cantidad válida')),
+      );
+      return;
+    }
+    setState(() {
+      _cantidad = parsedCantidad;
+      final index = _carrito.indexWhere((item) => item['id'] == _selectedArticulo);
+      if (index >= 0) {
+        _carrito[index]['cantidad'] += _cantidad;
+      } else {
+        _carrito.add({
+          'id': _selectedArticulo,
+          'nombre': _nombreArticulo,
+          'precio': _precioUnitario,
+          'cantidad': _cantidad,
+        });
+      }
+      _cantidadController.text = '1';
+      _cantidad = 1;
+    });
+  }
+
+  void _eliminarDelCarrito(String id) {
+    setState(() {
+      _carrito.removeWhere((item) => item['id'] == id);
+    });
+  }
+
+  Future<bool> _mostrarMetodoPagoDialog() async {
+    bool aceptado = false;
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: ProyectColors.surfaceDark,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text(
+            'Método de pago',
+            style: TextStyle(color: ProyectColors.primaryGreen, fontWeight: FontWeight.bold),
+          ),
+          content: StatefulBuilder(
+            builder: (context, setModalState) {
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _metodoPagoSeleccionado,
+                      style: const TextStyle(color: ProyectColors.textPrimary),
+                      dropdownColor: ProyectColors.surfaceDark,
+                      decoration: InputDecoration(
+                        labelText: 'Selecciona un método de pago',
+                        labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                        filled: true,
+                        fillColor: ProyectColors.surfaceDark,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      items: _metodosPago
+                          .map((metodo) => DropdownMenuItem<String>(
+                                value: metodo,
+                                child: Text(metodo, style: const TextStyle(color: ProyectColors.textPrimary)),
+                              ))
+                          .toList(),
+                      onChanged: (value) {
+                        setModalState(() {
+                          _metodoPagoSeleccionado = value;
+                        });
+                        setState(() {
+                          _metodoPagoSeleccionado = value;
+                        });
+                      },
+                    ),
+                    if (_metodoPagoSeleccionado == 'Tarjeta Visa') ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        controller: _numeroTarjeta,
+                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Número de la tarjeta',
+                          prefixIcon: Icon(Icons.credit_card, color: ProyectColors.primaryGreen),
+                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          counterText: '',
+                        ),
+                        keyboardType: TextInputType.number,
+                        maxLength: 16,
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              controller: _fechaVencimiento,
+                              style: const TextStyle(color: ProyectColors.textPrimary),
+                              decoration: InputDecoration(
+                                labelText: 'Vencimiento (MM/YYYY)',
+                                prefixIcon: Icon(Icons.date_range, color: ProyectColors.primaryGreen),
+                                labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                                filled: true,
+                                fillColor: ProyectColors.surfaceDark,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                hintText: 'MM/YYYY',
+                                hintStyle: const TextStyle(color: ProyectColors.textSecondary),
+                              ),
+                              keyboardType: TextInputType.datetime,
+                              maxLength: 7,
+                              onChanged: (value) {
+                                // Formato automático MM/YYYY
+                                if (value.length == 2 && !_fechaVencimiento.text.contains('/')) {
+                                  _fechaVencimiento.text = '$value/';
+                                  _fechaVencimiento.selection = TextSelection.fromPosition(
+                                    TextPosition(offset: _fechaVencimiento.text.length),
+                                  );
+                                }
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: TextField(
+                              controller: _cvv,
+                              style: const TextStyle(color: ProyectColors.textPrimary),
+                              decoration: InputDecoration(
+                                labelText: 'CVV',
+                                prefixIcon: Icon(Icons.lock, color: ProyectColors.primaryGreen),
+                                labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                                filled: true,
+                                fillColor: ProyectColors.surfaceDark,
+                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                              keyboardType: TextInputType.number,
+                              maxLength: 3,
+                              obscureText: true,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _nombreTitular,
+                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Nombre del titular',
+                          prefixIcon: Icon(Icons.person, color: ProyectColors.primaryGreen),
+                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _direccion,
+                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Dirección de facturación',
+                          prefixIcon: Icon(Icons.home, color: ProyectColors.primaryGreen),
+                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _correo,
+                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Correo electrónico',
+                          prefixIcon: Icon(Icons.email, color: ProyectColors.primaryGreen),
+                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        keyboardType: TextInputType.emailAddress,
+                      ),
+                      const SizedBox(height: 8),
+                      TextField(
+                        controller: _telefono,
+                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Teléfono',
+                          prefixIcon: Icon(Icons.phone, color: ProyectColors.primaryGreen),
+                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                        keyboardType: TextInputType.phone,
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          ),
+          actions: [
+            TextButton(
+              child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen,
+              ),
+              child: const Text('Aceptar', style: TextStyle(color: ProyectColors.backgroundDark)),
+              onPressed: () {
+                if (_metodoPagoSeleccionado == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Selecciona un método de pago')),
+                  );
+                  return;
+                }
+                if (_metodoPagoSeleccionado == 'Tarjeta Visa') {
+                  // Validaciones de tarjeta
+                  final tarjeta = _numeroTarjeta.text.trim();
+                  final venc = _fechaVencimiento.text.trim();
+                  final cvv = _cvv.text.trim();
+                  final nombre = _nombreTitular.text.trim();
+                  final correo = _correo.text.trim();
+
+                  final emailRegex = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                  final vencimientoRegex = RegExp(r'^(0[1-9]|1[0-2])\/\d{4}$');
+
+                  if (tarjeta.length != 16 || int.tryParse(tarjeta) == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Número de tarjeta inválido')),
+                    );
+                    return;
+                  }
+                  if (!vencimientoRegex.hasMatch(venc)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Fecha de vencimiento inválida. Usa MM/YYYY')),
+                    );
+                    return;
+                  }
+                  if (cvv.length != 3 || int.tryParse(cvv) == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('CVV inválido')),
+                    );
+                    return;
+                  }
+                  if (nombre.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Nombre del titular requerido')),
+                    );
+                    return;
+                  }
+                  if (!emailRegex.hasMatch(correo)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Correo electrónico inválido')),
+                    );
+                    return;
+                  }
+                  // Puedes agregar más validaciones si lo deseas
+                }
+                aceptado = true;
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+    return aceptado;
+  }
+
+  void _comprar() async {
+    if (_carrito.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El carrito está vacío')),
+      );
+      return;
+    }
+    bool pagoOk = true;
+    if (_metodoPagoSeleccionado == null) {
+      pagoOk = await _mostrarMetodoPagoDialog();
+      if (!pagoOk) return;
+    } else if (_metodoPagoSeleccionado == 'Tarjeta Visa') {
+      pagoOk = await _mostrarMetodoPagoDialog();
+      if (!pagoOk) return;
+    }
+    // Si pasa todas las validaciones:
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('¡Compra realizada con éxito!')),
+    );
+    setState(() {
+      _carrito.clear();
+      _metodoPagoSeleccionado = null;
+      _numeroTarjeta.clear();
+      _fechaVencimiento.clear();
+      _cvv.clear();
+      _nombreTitular.clear();
+      _direccion.clear();
+      _correo.clear();
+      _telefono.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Registrar Venta',
-          style: TextStyle(
-            color: ProyectColors.primaryGreen,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Registrar Venta',
+            style: TextStyle(
+              color: ProyectColors.primaryGreen,
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        DropdownButtonFormField<String>(
-          decoration: InputDecoration(
-            labelText: 'Artículo',
-            prefixIcon:
-                Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          items: const [],
-          onChanged: (_) {},
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Cantidad vendida',
-                  prefixIcon: Icon(Icons.confirmation_number,
-                      color: ProyectColors.primaryGreen),
-                  labelStyle:
-                      const TextStyle(color: ProyectColors.textSecondary),
-                  filled: true,
-                  fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                keyboardType: TextInputType.number,
-              ),
+          const SizedBox(height: 24),
+          DropdownButtonFormField<String>(
+            value: _selectedArticulo,
+            style: const TextStyle(color: ProyectColors.textPrimary),
+            dropdownColor: ProyectColors.surfaceDark,
+            decoration: InputDecoration(
+              labelText: 'Artículo',
+              prefixIcon: Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
+              labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+              filled: true,
+              fillColor: ProyectColors.surfaceDark,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Precio individual',
-                  prefixIcon: Icon(Icons.attach_money,
-                      color: ProyectColors.primaryGreen),
-                  labelStyle:
-                      const TextStyle(color: ProyectColors.textSecondary),
-                  filled: true,
-                  fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        TextField(
-          decoration: InputDecoration(
-            labelText: 'Total acumulado',
-            prefixIcon:
-                Icon(Icons.calculate, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-          keyboardType: TextInputType.number,
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: Row(
-                spacing: 16,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    '¿Es un cliente Frecuente?',
-                    style: TextStyle(
-                      color: ProyectColors.textPrimary,
-                      fontSize: 16,
-                    ),
-                  ),
-                  Checkbox(
-                    value: _checked,
-                    checkColor: ProyectColors.backgroundDark,
-                    activeColor: ProyectColors.primaryGreen,
-                    onChanged: (value) {
-                      if (value != null) {
-                        setState(() {
-                          _checked = value;
-                        });
-                      }
-                    },
-                  )
-                ],
-              ),
-            ),
-            Expanded(
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Nombre del cliente (opcional)',
-                  prefixIcon:
-                      Icon(Icons.person, color: ProyectColors.primaryGreen),
-                  labelStyle:
-                      const TextStyle(color: ProyectColors.textSecondary),
-                  filled: true,
-                  fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: ProyectColors.primaryGreen,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
-            ),
-            onPressed: () {
-              // Acción de guardar venta
+            items: _articulos
+                .map((art) => DropdownMenuItem<String>(
+                      value: art['id'],
+                      child: Text(art['nombre'], style: const TextStyle(color: ProyectColors.textPrimary)),
+                    ))
+                .toList(),
+            onChanged: (value) {
+              setState(() {
+                _selectedArticulo = value;
+              });
             },
-            icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
-            label: const Text(
-              'Guardar Venta',
-              style: TextStyle(
-                color: ProyectColors.backgroundDark,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _cantidadController,
+                  style: const TextStyle(color: ProyectColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Cantidad',
+                    prefixIcon: Icon(Icons.confirmation_number, color: ProyectColors.primaryGreen),
+                    labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                    filled: true,
+                    fillColor: ProyectColors.surfaceDark,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    setState(() {
+                      _cantidad = int.tryParse(value) ?? 1;
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: TextField(
+                  enabled: false,
+                  style: const TextStyle(color: ProyectColors.textPrimary),
+                  decoration: InputDecoration(
+                    labelText: 'Precio unitario',
+                    prefixIcon: Icon(Icons.attach_money, color: ProyectColors.primaryGreen),
+                    labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                    filled: true,
+                    fillColor: ProyectColors.surfaceDark,
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  controller: TextEditingController(
+                    text: _selectedArticulo == null ? '' : _precioUnitario.toStringAsFixed(2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: _agregarAlCarrito,
+              icon: const Icon(Icons.add_shopping_cart, color: ProyectColors.backgroundDark),
+              label: const Text(
+                'Agregar al carrito',
+                style: TextStyle(
+                  color: ProyectColors.backgroundDark,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
               ),
             ),
           ),
-        ),
-      ],
+          const SizedBox(height: 24),
+          if (_carrito.isNotEmpty) ...[
+            const Text(
+              'Carrito',
+              style: TextStyle(
+                color: ProyectColors.primaryGreen,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 90,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: _carrito.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final item = _carrito[index];
+                  return Card(
+                    color: ProyectColors.surfaceDark,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item['nombre'], style: const TextStyle(color: ProyectColors.textPrimary, fontWeight: FontWeight.bold)),
+                              Text('Cantidad: ${item['cantidad']}', style: const TextStyle(color: ProyectColors.textPrimary)),
+                            ],
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: ProyectColors.danger),
+                            tooltip: 'Eliminar',
+                            onPressed: () => _eliminarDelCarrito(item['id']),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              enabled: false,
+              style: const TextStyle(color: ProyectColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Precio total',
+                prefixIcon: Icon(Icons.calculate, color: ProyectColors.primaryGreen),
+                labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                filled: true,
+                fillColor: ProyectColors.surfaceDark,
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              controller: TextEditingController(text: _precioTotal.toStringAsFixed(2)),
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ProyectColors.primaryGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _comprar,
+                icon: const Icon(Icons.shopping_cart_checkout, color: ProyectColors.backgroundDark),
+                label: const Text(
+                  'Comprar',
+                  style: TextStyle(
+                    color: ProyectColors.backgroundDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
