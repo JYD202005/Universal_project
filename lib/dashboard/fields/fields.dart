@@ -1685,3 +1685,301 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
     );
   }
 }
+
+///////----------------Etiquetas productos--------------------//////
+class EtiquetasProductosFields extends StatefulWidget {
+  const EtiquetasProductosFields({super.key});
+
+  @override
+  State<EtiquetasProductosFields> createState() => _EtiquetasProductosFieldsState();
+}
+
+class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> with SingleTickerProviderStateMixin {
+  late TabController _tabController;
+
+  // Línea
+  final TextEditingController _lineaNombre = TextEditingController();
+  final List<String> _lineas = [];
+
+  // Familia
+  final TextEditingController _familiaNombre = TextEditingController();
+  final TextEditingController _familiaPrefijo = TextEditingController();
+  final List<Map<String, String>> _familias = [];
+
+  // Marca
+  final TextEditingController _marcaNombre = TextEditingController();
+  final List<String> _marcas = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 3, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _lineaNombre.dispose();
+    _familiaNombre.dispose();
+    _familiaPrefijo.dispose();
+    _marcaNombre.dispose();
+    super.dispose();
+  }
+
+  void _guardarLinea() {
+    if (_lineaNombre.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa el nombre de la línea')),
+      );
+      return;
+    }
+    setState(() {
+      _lineas.add(_lineaNombre.text.trim());
+      _lineaNombre.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Línea guardada con éxito')),
+    );
+  }
+
+  void _guardarFamilia() {
+    if (_familiaNombre.text.trim().isEmpty || _familiaPrefijo.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor completa todos los campos de familia')),
+      );
+      return;
+    }
+    setState(() {
+      _familias.add({
+        'nombre': _familiaNombre.text.trim(),
+        'prefijo': _familiaPrefijo.text.trim(),
+      });
+      _familiaNombre.clear();
+      _familiaPrefijo.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Familia guardada con éxito')),
+    );
+  }
+
+  void _guardarMarca() {
+    if (_marcaNombre.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Por favor ingresa el nombre de la marca')),
+      );
+      return;
+    }
+    setState(() {
+      _marcas.add(_marcaNombre.text.trim());
+      _marcaNombre.clear();
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Marca guardada con éxito')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        const Text(
+          'Etiquetas de Productos',
+          style: TextStyle(
+            color: ProyectColors.primaryGreen,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TabBar(
+          controller: _tabController,
+          indicatorColor: ProyectColors.primaryGreen,
+          labelColor: ProyectColors.primaryGreen,
+          unselectedLabelColor: ProyectColors.textSecondary,
+          tabs: const [
+            Tab(text: 'Línea'),
+            Tab(text: 'Familia'),
+            Tab(text: 'Marca'),
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 260, // Ajusta según tu diseño
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              // Línea
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _lineaNombre,
+                    style: const TextStyle(color: ProyectColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Nombre de la línea',
+                      prefixIcon: Icon(Icons.view_stream, color: ProyectColors.primaryGreen),
+                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      filled: true,
+                      fillColor: ProyectColors.surfaceDark,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ProyectColors.primaryGreen,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _guardarLinea,
+                      icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                      label: const Text(
+                        'Guardar Línea',
+                        style: TextStyle(
+                          color: ProyectColors.backgroundDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_lineas.isNotEmpty)
+                    Expanded(
+                      child: ListView(
+                        children: _lineas
+                            .map((linea) => ListTile(
+                                  leading: const Icon(Icons.view_stream, color: ProyectColors.primaryGreen),
+                                  title: Text(linea, style: const TextStyle(color: ProyectColors.textPrimary)),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                ],
+              ),
+              // Familia
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _familiaNombre,
+                    style: const TextStyle(color: ProyectColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Nombre de la familia',
+                      prefixIcon: Icon(Icons.family_restroom, color: ProyectColors.primaryGreen),
+                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      filled: true,
+                      fillColor: ProyectColors.surfaceDark,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _familiaPrefijo,
+                    style: const TextStyle(color: ProyectColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Prefijo',
+                      prefixIcon: Icon(Icons.short_text, color: ProyectColors.primaryGreen),
+                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      filled: true,
+                      fillColor: ProyectColors.surfaceDark,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ProyectColors.primaryGreen,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _guardarFamilia,
+                      icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                      label: const Text(
+                        'Guardar Familia',
+                        style: TextStyle(
+                          color: ProyectColors.backgroundDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_familias.isNotEmpty)
+                    Expanded(
+                      child: ListView(
+                        children: _familias
+                            .map((familia) => ListTile(
+                                  leading: const Icon(Icons.family_restroom, color: ProyectColors.primaryGreen),
+                                  title: Text(familia['nombre']!, style: const TextStyle(color: ProyectColors.textPrimary)),
+                                  subtitle: Text('Prefijo: ${familia['prefijo']}', style: const TextStyle(color: ProyectColors.textSecondary)),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                ],
+              ),
+              // Marca
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _marcaNombre,
+                    style: const TextStyle(color: ProyectColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Nombre de la marca',
+                      prefixIcon: Icon(Icons.business, color: ProyectColors.primaryGreen),
+                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      filled: true,
+                      fillColor: ProyectColors.surfaceDark,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: ProyectColors.primaryGreen,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: _guardarMarca,
+                      icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                      label: const Text(
+                        'Guardar Marca',
+                        style: TextStyle(
+                          color: ProyectColors.backgroundDark,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (_marcas.isNotEmpty)
+                    Expanded(
+                      child: ListView(
+                        children: _marcas
+                            .map((marca) => ListTile(
+                                  leading: const Icon(Icons.business, color: ProyectColors.primaryGreen),
+                                  title: Text(marca, style: const TextStyle(color: ProyectColors.textPrimary)),
+                                ))
+                            .toList(),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
