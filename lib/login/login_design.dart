@@ -27,7 +27,7 @@ class LoginDesign extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('logo_universal.png', height: 120),
+                Image.asset('assets/logo_universal.png', height: 120),
                 const SizedBox(height: 24),
                 Text('Bienvenido a la Universal', style: titleStyle),
                 const SizedBox(height: 32),

@@ -14,6 +14,7 @@ class _DashboardPageState extends State<DashboardPage> {
   final ScrollController _mainScrollController = ScrollController();
   final ScrollController _verticalTableScrollController = ScrollController();
   final ScrollController _horizontalTableScrollController = ScrollController();
+  bool _scrollInTable = false;
 
   //Lsitas Para cargar datos
   List<Map<String, dynamic>> LoadTablaTodo = [];
@@ -44,61 +45,29 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    // Determina cuántos cards por fila según el ancho de pantalla
-    int cardsPerRow;
-    if (screenWidth >= 1400) {
-      cardsPerRow = 4;
-    } else if (screenWidth >= 1100) {
-      cardsPerRow = 2;
-    } else {
-      cardsPerRow = 1;
-    }
-
-    final cardData = [
-      {'title': 'Empleados activos', 'value': EmpleadosActivos},
-      {'title': 'Ventas del Dia', 'value': VentasDelDia},
-      {'title': 'Productos Agotados', 'value': ProductosAgotados},
-      {'title': 'Entradas Registradas', 'value': EntradasRegistradas},
-    ];
-
-    List<Widget> cardRows = [];
-    for (int i = 0; i < cardData.length; i += cardsPerRow) {
-      final rowCards = cardData
-          .skip(i)
-          .take(cardsPerRow)
-          .map((data) => Flexible(
-                flex: 1,
-                child: _buildCard(data['title']!, data['value']!),
-              ))
-          .toList();
-      cardRows.add(Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: rowCards,
-      ));
-      cardRows.add(const SizedBox(height: 16));
-    }
-
     return Scaffold(
       backgroundColor: ProyectColors.surfaceDark,
-      body: Row(
-        children: [
-          custom_menu.MenuBar(
-            selectedIndex: 0,
-            onDestinationSelected: (int index) {
-              setState(() {});
-            },
-          ),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Scrollbar(
+      body: RawScrollbar(
+        controller: _mainScrollController,
+        thumbVisibility: !_scrollInTable,
+        thumbColor: ProyectColors.textPrimary.withOpacity(0.5),
+        thickness: 6,
+        radius: const Radius.circular(8), // Esto suaviza el borde
+        crossAxisMargin: 2,
+        child: Row(
+          children: [
+            custom_menu.MenuBar(
+              selectedIndex: 0,
+              onDestinationSelected: (int index) {
+                setState(() {});
+              },
+            ),
+            Expanded(
+              child: SingleChildScrollView(
                 controller: _mainScrollController,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _mainScrollController,
-                  scrollDirection: Axis.vertical,
+                scrollDirection: Axis.vertical,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -115,10 +84,18 @@ class _DashboardPageState extends State<DashboardPage> {
                         style: TextStyle(color: ProyectColors.textSecondary),
                       ),
                       const SizedBox(height: 24),
-                      ...cardRows,
+                      Row(
+                        children: [
+                          _buildCard('Empleados activos', EmpleadosActivos),
+                          _buildCard('Ventas del día', VentasDelDia),
+                          _buildCard(
+                              'Entradas registradas', EntradasRegistradas),
+                          _buildCard('Productos agotados', ProductosAgotados),
+                        ],
+                      ),
                       const SizedBox(height: 16),
                       Wrap(
-                        spacing: 12,
+                        spacing: 18,
                         children: filters.map((filter) {
                           return ChoiceChip(
                             label: Text(filter),
@@ -159,15 +136,19 @@ class _DashboardPageState extends State<DashboardPage> {
                           );
                         }).toList(),
                       ),
-                      const SizedBox(height: 8),
-                      _buildProductTable(),
+                      const SizedBox(height: 16),
+                      MouseRegion(
+                        onEnter: (_) => setState(() => _scrollInTable = true),
+                        onExit: (_) => setState(() => _scrollInTable = false),
+                        child: _buildProductTable(),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -216,18 +197,9 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  //Tabla de productos
   Widget _buildProductTable() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Define el número de columnas
-        int columnCount = 7;
-        // Deja un pequeño margen para el borde y padding
-        double columnWidth = (constraints.maxWidth - 2) / columnCount;
-        // Ajusta el ancho para la columna state
-        double stateColumnWidth = 100; 
-        
-
         return SizedBox(
           width: double.infinity,
           child: ClipRRect(
@@ -237,174 +209,32 @@ class _DashboardPageState extends State<DashboardPage> {
                 border: Border.all(color: ProyectColors.primaryGreen),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Scrollbar(
-                controller: _verticalTableScrollController,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _verticalTableScrollController,
-                  scrollDirection: Axis.vertical,
+              child: RawScrollbar(
+                controller: _horizontalTableScrollController,
+                thumbVisibility: _scrollInTable,
+                trackVisibility: _scrollInTable,
+                thumbColor: ProyectColors.primaryGreen.withOpacity(0.8),
+                thickness: 6,
+                radius: const Radius.circular(8),
+                crossAxisMargin: 1,
+                child: SizedBox(
+                  height: 60 + 6 * 70, // altura visible: encabezado + 6 filas
+                  width: constraints.maxWidth,
                   child: SingleChildScrollView(
                     controller: _horizontalTableScrollController,
                     scrollDirection: Axis.horizontal,
-                    child: ConstrainedBox(
-                      constraints: BoxConstraints(
-                        minWidth: constraints.maxWidth,
-                        maxWidth: constraints.maxWidth,
-                      ),
-                      child: DataTable(
-                        showCheckboxColumn: false,
-                        dataRowHeight: 70,
-                        headingRowHeight: 60,
-                        columnSpacing: 0,
-                        dividerThickness: 1,
-                        headingRowColor:
-                            WidgetStateProperty.all(ProyectColors.primaryGreen),
-                        columns: [
-                          DataColumn(
-                              label: SizedBox(
-                                width: columnWidth,
-                                child: Center(
-                                  child: Text('Clave',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                          DataColumn(
-                              label: SizedBox(
-                                width: columnWidth,
-                                child: Center(
-                                  child: Text('Producto',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                          DataColumn(
-                              label: SizedBox(
-                                width: columnWidth,
-                                child: Center(
-                                  child: Text('Familia',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                          DataColumn(
-                              label: SizedBox(
-                                width: columnWidth,
-                                child: Center(
-                                  child: Text('Stock actual',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                          DataColumn(
-                              label: SizedBox(
-                                width: columnWidth,
-                                child: Center(
-                                  child: Text('Stock mínimo',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                          DataColumn(
-                              label: SizedBox(
-                                width: columnWidth,
-                                child: Center(
-                                  child: Text('Proveedor',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                          DataColumn(
-                              label: SizedBox(
-                                width: stateColumnWidth,
-                                child: Center(
-                                  child: Text('Estado',
-                                      style: TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                ),
-                              )),
-                        ],
-                        rows: [
-                          for (var item in LoadTablaTodo)
-                            DataRow(
-                              cells: [
-                                DataCell(SizedBox(
-                                  width: columnWidth,
-                                  child: Center(
-                                    child: Text(item['clave'],
-                                        style: const TextStyle(
-                                            color: ProyectColors.textPrimary)),
-                                  ),
-                                )),
-                                DataCell(SizedBox(
-                                  width: columnWidth,
-                                  child: Center(
-                                    child: Text(item['nombre'],
-                                        style: const TextStyle(
-                                            color: ProyectColors.textPrimary)),
-                                  ),
-                                )),
-                                DataCell(SizedBox(
-                                  width: columnWidth,
-                                  child: Center(
-                                    child: Text(item['familia'],
-                                        style: const TextStyle(
-                                            color: ProyectColors.textSecondary)),
-                                  ),
-                                )),
-                                DataCell(SizedBox(
-                                  width: columnWidth,
-                                  child: Center(
-                                    child: Text(item['stock_actual'].toString(),
-                                        style: const TextStyle(
-                                            color: ProyectColors.textPrimary)),
-                                  ),
-                                )),
-                                DataCell(SizedBox(
-                                  width: columnWidth,
-                                  child: Center(
-                                    child: Text(item['stock_minimo'].toString(),
-                                        style: const TextStyle(
-                                            color: ProyectColors.textPrimary)),
-                                  ),
-                                )),
-                                DataCell(SizedBox(
-                                  width: columnWidth,
-                                  child: Center(
-                                    child: Text(item['proveedor'] ?? 'Sin proveedor',
-                                        style: const TextStyle(
-                                            color: ProyectColors.textPrimary)),
-                                  ),
-                                )),
-                                DataCell(SizedBox(
-                                  width: stateColumnWidth,
-                                  child: Container(
-                                    alignment: Alignment.center,
-                                    height: 35,
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: item['estado'] == 'Crítico'
-                                          ? ProyectColors.danger
-                                          : item['estado'] == 'Bajo'
-                                              ? ProyectColors.warning
-                                              : ProyectColors.primaryGreen,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: FittedBox(
-                                      fit: BoxFit.scaleDown,
-                                      child: Text(
-                                        item['estado'],
-                                        style: TextStyle(
-                                          color: ProyectColors.textPrimary,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                )),
-                              ],
-                            ),
-                        ],
+                    child: SingleChildScrollView(
+                      controller: _verticalTableScrollController,
+                      scrollDirection: Axis.vertical,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minWidth: constraints.maxWidth,
+                        ),
+                        child: IntrinsicWidth(
+                          child: IntrinsicHeight(
+                            child: _buildDataTable(),
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -417,6 +247,113 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
+  Widget _buildDataTable() {
+    return DataTable(
+      showCheckboxColumn: false,
+      dataRowHeight: 60,
+      headingRowHeight: 56,
+      columnSpacing: 24,
+      dividerThickness: 1,
+      headingRowColor: MaterialStateProperty.all(ProyectColors.primaryGreen),
+      dataRowColor: MaterialStateProperty.all(ProyectColors.surfaceDark),
+      headingTextStyle: const TextStyle(
+        color: ProyectColors.textPrimary,
+        fontWeight: FontWeight.bold,
+        fontSize: 16,
+      ),
+      dataTextStyle: const TextStyle(
+        color: ProyectColors.textPrimary,
+        fontSize: 15,
+      ),
+      columns: [
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Clave',
+                    style: TextStyle(
+                      color: ProyectColors.textPrimary,
+                    )))),
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Producto',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Familia',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Stock actual',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Stock mínimo',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Proveedor',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+        DataColumn(
+            headingRowAlignment: MainAxisAlignment.center,
+            label: Center(
+                child: Text('Estado',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+      ],
+      rows: LoadTablaTodo.map((item) {
+        return DataRow(
+          cells: [
+            DataCell(Center(
+                child: Text(item['clave'],
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+            DataCell(Center(
+                child: Text(item['nombre'],
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+            DataCell(Center(
+                child: Text(item['familia'],
+                    style: TextStyle(color: ProyectColors.textSecondary)))),
+            DataCell(Center(
+                child: Text(item['stock_actual'].toString(),
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+            DataCell(Center(
+                child: Text(item['stock_minimo'].toString(),
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+            DataCell(Center(
+                child: Text(item['proveedor'] ?? 'Sin proveedor',
+                    style: TextStyle(color: ProyectColors.textPrimary)))),
+            DataCell(Container(
+              alignment: Alignment.center,
+              height: 35,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: item['estado'] == 'Crítico'
+                    ? ProyectColors.danger
+                    : item['estado'] == 'Bajo'
+                        ? ProyectColors.warning
+                        : ProyectColors.primaryGreen,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  item['estado'],
+                  style: const TextStyle(
+                    color: ProyectColors.textPrimary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            )),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
   void loadTabla() {
     List<Map<String, dynamic>> temp = [
       {
@@ -426,7 +363,6 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 51,
         'stock_minimo': 10,
         'disponible': false,
-        'estado': 'Bajo',
         'proveedor': 'Proveedor 1',
       },
       {
@@ -436,7 +372,6 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 3,
         'stock_minimo': 5,
         'disponible': true,
-        'estado': 'Óptimo',
         'proveedor': 'Proveedor 2',
       },
       {
@@ -446,7 +381,6 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 0,
         'stock_minimo': 15,
         'disponible': true,
-        'estado': 'Crítico',
         'proveedor': 'Proveedor 3',
       },
       {
@@ -456,10 +390,78 @@ class _DashboardPageState extends State<DashboardPage> {
         'stock_actual': 1,
         'stock_minimo': 3,
         'disponible': true,
-        'estado': 'Bajo',
         'proveedor': 'sin proveedor',
       },
+      {
+        'clave': 'I-2',
+        'nombre': 'Osciloscopio',
+        'familia': 'Instrumentos',
+        'stock_actual': 0,
+        'stock_minimo': 5,
+        'disponible': true,
+        'proveedor': 'Proveedor 4',
+      },
+      {
+        'clave': 'E-2',
+        'nombre': 'Resistencias',
+        'familia': 'Electrónica',
+        'stock_actual': 20,
+        'stock_minimo': 10,
+        'disponible': true,
+        'proveedor': null,
+      },
+      {
+        'clave': 'E-3',
+        'nombre': 'Transistores',
+        'familia': 'Electrónica',
+        'stock_actual': 5,
+        'stock_minimo': 10,
+        'disponible': true,
+        'proveedor': null,
+      },
+      {
+        'clave': 'E-4',
+        'nombre': 'Condensadores',
+        'familia': 'Electrónica',
+        'stock_actual': 0,
+        'stock_minimo': 10,
+        'disponible': true,
+        'proveedor': null,
+      },
+      {
+        'clave': 'E-5',
+        'nombre': 'Diodos',
+        'familia': 'Electrónica',
+        'stock_actual': 0,
+        'stock_minimo': 10,
+        'disponible': true,
+        'proveedor': null,
+      },
+      {
+        'clave': 'E-6',
+        'nombre': 'Transistores MOSFET',
+        'familia': 'Electrónica',
+        'stock_actual': 0,
+        'stock_minimo': 10,
+        'disponible': true,
+        'proveedor': null,
+      },
     ];
+    // Actualizar el estado según el stock
+    for (var item in temp) {
+      int stockActual = item['stock_actual'];
+      int stockMinimo = item['stock_minimo'];
+
+      if (stockActual * 2 <= stockMinimo) {
+        item['estado'] = 'Crítico';
+      } else if (stockActual < stockMinimo) {
+        item['estado'] = 'Bajo'; // amarillo
+      } else {
+        item['estado'] = 'Óptimo'; // verde
+      }
+    }
+
+    // Filtrar según el filtro seleccionado
     switch (selectedFilter) {
       case 'Todos':
         temp = temp.where((item) => item['disponible'] == true).toList();

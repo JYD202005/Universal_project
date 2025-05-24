@@ -64,7 +64,7 @@ class MenuBar extends StatelessWidget {
           const TextStyle(color: ProyectColors.textSecondary),
       leading: Column(
         children: [
-          Image.asset('logo_universal.png', height: 120),
+          Image.asset('assets/logo_universal.png', height: 120),
           const Text('La Universal',
               style: TextStyle(
                   fontSize: 16,
