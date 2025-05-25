@@ -12,6 +12,7 @@ dependencies:
   flutter:
     sdk: flutter
   mysql1: ^0.20.0
+  supabase_flutter: ^2.9.0
   window_size: ^0.1.0
 
 dev_dependencies:
