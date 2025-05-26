@@ -202,7 +202,8 @@ class RegistrarClienteForm extends StatelessWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: RegistrarClienteFrecuenteFields(), // <--- Aquí usas el widget externo
+          child:
+              RegistrarClienteFrecuenteFields(), // <--- Aquí usas el widget externo
         ),
       ),
     );
@@ -226,4 +227,3 @@ class RegistrarTagForm extends StatelessWidget {
     );
   }
 }
-

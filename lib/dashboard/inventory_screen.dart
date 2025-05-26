@@ -17,7 +17,7 @@ class _InventoryScreenState extends State<InventoryScreen>
   bool _scrollInTable = false;
   bool _scrollInTable2 = false;
   bool _boolButton = false;
-  bool _boolButton2 = false;
+  final bool _boolButton2 = false;
 
   //Listas Dinamicas
   List<Map<String, dynamic>> _articulos = [];
@@ -112,9 +112,9 @@ class _InventoryScreenState extends State<InventoryScreen>
         'disponibilidad': false
       },
     ];
-    String _bool = tipo.toString();
+    String bool = tipo.toString();
     // Filtrar según el filtro seleccionado
-    switch (_bool) {
+    switch (bool) {
       case 'false':
         temp = temp.where((item) => item['disponibilidad'] == true).toList();
         break;
@@ -190,9 +190,9 @@ class _InventoryScreenState extends State<InventoryScreen>
         'disponibilidad': false
       }
     ];
-    String _bool = prove.toString();
+    String bool = prove.toString();
     // Filtrar según el filtro seleccionado
-    switch (_bool) {
+    switch (bool) {
       case 'false':
         temp = temp.where((item) => item['disponibilidad'] == true).toList();
         break;

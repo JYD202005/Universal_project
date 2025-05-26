@@ -71,9 +71,9 @@ class _ArticulosTableState extends State<ArticulosTable> {
                           headingRowHeight: 56,
                           columnSpacing: 24,
                           dividerThickness: 1,
-                          headingRowColor: MaterialStateProperty.all(
+                          headingRowColor: WidgetStateProperty.all(
                               ProyectColors.primaryGreen),
-                          dataRowColor: MaterialStateProperty.all(
+                          dataRowColor: WidgetStateProperty.all(
                               ProyectColors.surfaceDark),
                           headingTextStyle: const TextStyle(
                             color: ProyectColors.textPrimary,
@@ -263,9 +263,9 @@ class _ProveedoresTableState extends State<ProveedoresTable> {
                             headingRowHeight: 56,
                             columnSpacing: 24,
                             dividerThickness: 1,
-                            headingRowColor: MaterialStateProperty.all(
+                            headingRowColor: WidgetStateProperty.all(
                                 ProyectColors.primaryGreen),
-                            dataRowColor: MaterialStateProperty.all(
+                            dataRowColor: WidgetStateProperty.all(
                                 ProyectColors.surfaceDark),
                             headingTextStyle: const TextStyle(
                               color: ProyectColors.textPrimary,

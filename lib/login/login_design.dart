@@ -15,7 +15,6 @@ class _LoginDesignState extends State<LoginDesign> {
   final TextEditingController passwordController = TextEditingController();
   final supabase = Supabase.instance.client;
 
-
   final TextStyle titleStyle = const TextStyle(
     color: ProyectColors.accentGreen,
     fontSize: 26,
@@ -71,11 +70,10 @@ class _LoginDesignState extends State<LoginDesign> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset('logo_universal.png', height: 120),
+                Image.asset('assets/logo_universal.png', height: 120),
                 const SizedBox(height: 24),
                 Text('Bienvenido a la Universal', style: titleStyle),
                 const SizedBox(height: 32),
-
                 _buildInputField(
                   'Correo electrónico',
                   Icons.email,
@@ -88,14 +86,12 @@ class _LoginDesignState extends State<LoginDesign> {
                   isPassword: true,
                   controller: passwordController,
                 ),
-
                 const SizedBox(height: 24),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: ProyectColors.primaryGreen,
-
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 80, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 80, vertical: 16),
                   ),
                   onPressed: login,
                   child: const Text(

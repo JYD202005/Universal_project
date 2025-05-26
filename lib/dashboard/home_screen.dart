@@ -254,8 +254,8 @@ class _DashboardPageState extends State<DashboardPage> {
       headingRowHeight: 56,
       columnSpacing: 24,
       dividerThickness: 1,
-      headingRowColor: MaterialStateProperty.all(ProyectColors.primaryGreen),
-      dataRowColor: MaterialStateProperty.all(ProyectColors.surfaceDark),
+      headingRowColor: WidgetStateProperty.all(ProyectColors.primaryGreen),
+      dataRowColor: WidgetStateProperty.all(ProyectColors.surfaceDark),
       headingTextStyle: const TextStyle(
         color: ProyectColors.textPrimary,
         fontWeight: FontWeight.bold,

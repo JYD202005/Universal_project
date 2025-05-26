@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:base_de_datos_universal/colours/colours.dart';
+import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as path;
 
 ///////----------------Artículos--------------------//////
 class RegistrarArticuloFields extends StatefulWidget {
@@ -18,6 +22,8 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   final TextEditingController _codigo = TextEditingController();
   final TextEditingController _minimaController = TextEditingController();
 
+  final supabase = Supabase.instance.client;
+
   // cargar dropdown de marcas, familias, líneas y proveedores
   List<Map<String, dynamic>> _loadMarca = [];
   String? _selectedMarca;
@@ -34,26 +40,26 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   //Metodo para cargar los dropdowns
   //cambiar lo de adentro por las variables de la base de datos
   void _loadDrops() async {
-    _loadMarca = [
-      {'id': 1, 'name': 'Marca 1'},
-      {'id': 2, 'name': 'Marca 2'},
-      {'id': 3, 'name': 'Marca 3'},
-    ];
-    _loadFamilia = [
-      {'id': 1, 'name': 'Familia 1', 'Prefijo': 'L-'},
-      {'id': 2, 'name': 'Familia 2', 'Prefijo': 'G-'},
-      {'id': 3, 'name': 'Familia 3', 'Prefijo': 'H-'}
-    ];
-    _loadLinea = [
-      {'id': 1, 'name': 'Línea 1'},
-      {'id': 2, 'name': 'Línea 2'},
-      {'id': 3, 'name': 'Línea 3'},
-    ];
-    _loadProveedor = [
-      {'id': 1, 'name': 'Proveedor 1'},
-      {'id': 2, 'name': 'Proveedor 2'},
-      {'id': 3, 'name': 'Proveedor 3'},
-    ];
+    final responseLineas = await supabase.from('Linea').select('id, nombre');
+    final responseFamilias =
+        await supabase.from('Familia').select('id, nombre, prefijo');
+    final responseMarcas = await supabase.from('Marca').select('id, nombre');
+    final responseProveedores =
+        await supabase.from('Proveedores').select('id, nombre');
+    // Asegúrate de que las respuestas sean listas antes de asignarlas
+    if (responseLineas is List &&
+        responseFamilias is List &&
+        responseMarcas is List) {
+      setState(() {
+        _loadLinea = List<Map<String, dynamic>>.from(responseLineas);
+        _loadFamilia = List<Map<String, dynamic>>.from(responseFamilias);
+        _loadMarca = List<Map<String, dynamic>>.from(responseMarcas);
+        _loadProveedor = List<Map<String, dynamic>>.from(responseProveedores);
+      });
+    } else {
+      // Manejo de errores si alguna respuesta falla
+      print('Error al cargar datos desde Supabase');
+    }
   }
 
   //Guardar el artículo
@@ -111,15 +117,6 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
       int actual = int.parse(_cantidad.text);
       int minimo = int.parse(_minimaController.text);
 
-      String estado;
-      if (actual * 2 <= minimo) {
-        estado = 'Crítico';
-      } else if (actual < minimo) {
-        estado = 'Bajo';
-      } else {
-        estado = 'Óptimo';
-      }
-
       _guardardo.add({
         'Clave': nuevaClave,
         'nombre': _nombre.text,
@@ -131,7 +128,6 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
         'cantidad': int.parse(_cantidad.text),
         'cantidad_minima': int.parse(_minimaController.text),
         'codigo': _codigo.text,
-        'Estado': estado,
         'Disponible': true,
       });
       // Verificar si se guardó
@@ -142,6 +138,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
           ),
         );
         print(_guardardo);
+        _BaseAdd(nuevaClave);
         Limpiar();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -154,6 +151,22 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
       // Manejo de errores
       print('Error al guardar el artículo: $e');
     }
+  }
+
+  void _BaseAdd(String nuevaClave) async {
+    await supabase.from('Articulos').insert({
+      'clave': nuevaClave,
+      'nombre': _nombre.text,
+      'marca_id': int.parse(_selectedMarca!),
+      'familia_id': int.parse(_selectedFamilia!),
+      'linea_id': int.parse(_selectedLinea!),
+      'provee_id': int.parse(_selectedProveedor!),
+      'precio': double.parse(_precio.text),
+      'cantidad_stock': int.parse(_cantidad.text),
+      'cantidad_min': int.parse(_minimaController.text),
+      'codigo_barras': _codigo.text,
+      'deshabilitado': true,
+    });
   }
 
   void Limpiar() {
@@ -255,7 +268,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                 items: _loadMarca
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 style: const TextStyle(color: ProyectColors.textPrimary),
@@ -286,7 +299,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                 items: _loadLinea
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 style: const TextStyle(color: ProyectColors.textPrimary),
@@ -321,7 +334,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                 items: _loadFamilia
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 style: const TextStyle(color: ProyectColors.textPrimary),
@@ -352,7 +365,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                 items: _loadProveedor
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 style: const TextStyle(color: ProyectColors.textPrimary),
@@ -539,15 +552,13 @@ class RegistrarVentaFields extends StatefulWidget {
 class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   String? _selectedArticulo;
   int _cantidad = 1;
-  final TextEditingController _cantidadController = TextEditingController(text: '1');
+  final TextEditingController _cantidadController =
+      TextEditingController(text: '1');
   final List<Map<String, dynamic>> _carrito = [];
+  final supabase = Supabase.instance.client;
 
   // Artículos simulados
-  final List<Map<String, dynamic>> _articulos = [
-    {'id': '1', 'nombre': 'Cable UTP', 'precio': 50.0},
-    {'id': '2', 'nombre': 'Router TP-Link', 'precio': 800.0},
-    {'id': '3', 'nombre': 'Arduino UNO', 'precio': 350.0},
-  ];
+  List<Map<String, dynamic>> _articulos = [];
 
   // Métodos de pago simulados
   final List<String> _metodosPago = ['Efectivo', 'Tarjeta Visa'];
@@ -561,6 +572,32 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   final TextEditingController _direccion = TextEditingController();
   final TextEditingController _correo = TextEditingController();
   final TextEditingController _telefono = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _initAsync();
+  }
+
+  Future<void> _initAsync() async {
+    await loadDrop();
+  }
+
+  Future<void> loadDrop() async {
+    final responseArt = await supabase
+        .from('Articulos')
+        .select('id, nombre, precio, cantidad_stock,marca_id');
+
+    if (responseArt is List) {
+      setState(() {
+        _articulos = List<Map<String, dynamic>>.from(responseArt);
+        print(_articulos);
+      });
+    } else {
+      // Manejo de errores si alguna respuesta falla
+      print('Error al cargar datos desde Supabase');
+    }
+  }
 
   double get _precioUnitario {
     final articulo = _articulos.firstWhere(
@@ -588,15 +625,19 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
 
   void _agregarAlCarrito() {
     final parsedCantidad = int.tryParse(_cantidadController.text);
-    if (_selectedArticulo == null || parsedCantidad == null || parsedCantidad <= 0) {
+    if (_selectedArticulo == null ||
+        parsedCantidad == null ||
+        parsedCantidad <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Selecciona un artículo y cantidad válida')),
+        const SnackBar(
+            content: Text('Selecciona un artículo y cantidad válida')),
       );
       return;
     }
     setState(() {
       _cantidad = parsedCantidad;
-      final index = _carrito.indexWhere((item) => item['id'] == _selectedArticulo);
+      final index =
+          _carrito.indexWhere((item) => item['id'] == _selectedArticulo);
       if (index >= 0) {
         _carrito[index]['cantidad'] += _cantidad;
       } else {
@@ -625,10 +666,12 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
       builder: (context) {
         return AlertDialog(
           backgroundColor: ProyectColors.surfaceDark,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           title: const Text(
             'Método de pago',
-            style: TextStyle(color: ProyectColors.primaryGreen, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: ProyectColors.primaryGreen, fontWeight: FontWeight.bold),
           ),
           content: StatefulBuilder(
             builder: (context, setModalState) {
@@ -642,15 +685,19 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                       dropdownColor: ProyectColors.surfaceDark,
                       decoration: InputDecoration(
                         labelText: 'Selecciona un método de pago',
-                        labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                        labelStyle:
+                            const TextStyle(color: ProyectColors.textPrimary),
                         filled: true,
                         fillColor: ProyectColors.surfaceDark,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       items: _metodosPago
                           .map((metodo) => DropdownMenuItem<String>(
                                 value: metodo,
-                                child: Text(metodo, style: const TextStyle(color: ProyectColors.textPrimary)),
+                                child: Text(metodo,
+                                    style: const TextStyle(
+                                        color: ProyectColors.textPrimary)),
                               ))
                           .toList(),
                       onChanged: (value) {
@@ -666,14 +713,18 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                       const SizedBox(height: 16),
                       TextField(
                         controller: _numeroTarjeta,
-                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Número de la tarjeta',
-                          prefixIcon: Icon(Icons.credit_card, color: ProyectColors.primaryGreen),
-                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          prefixIcon: Icon(Icons.credit_card,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
                           filled: true,
                           fillColor: ProyectColors.surfaceDark,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                           counterText: '',
                         ),
                         keyboardType: TextInputType.number,
@@ -685,25 +736,33 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                           Expanded(
                             child: TextField(
                               controller: _fechaVencimiento,
-                              style: const TextStyle(color: ProyectColors.textPrimary),
+                              style: const TextStyle(
+                                  color: ProyectColors.textPrimary),
                               decoration: InputDecoration(
                                 labelText: 'Vencimiento (MM/YYYY)',
-                                prefixIcon: Icon(Icons.date_range, color: ProyectColors.primaryGreen),
-                                labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                                prefixIcon: Icon(Icons.date_range,
+                                    color: ProyectColors.primaryGreen),
+                                labelStyle: const TextStyle(
+                                    color: ProyectColors.textPrimary),
                                 filled: true,
                                 fillColor: ProyectColors.surfaceDark,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                                 hintText: 'MM/YYYY',
-                                hintStyle: const TextStyle(color: ProyectColors.textSecondary),
+                                hintStyle: const TextStyle(
+                                    color: ProyectColors.textSecondary),
                               ),
                               keyboardType: TextInputType.datetime,
                               maxLength: 7,
                               onChanged: (value) {
                                 // Formato automático MM/YYYY
-                                if (value.length == 2 && !_fechaVencimiento.text.contains('/')) {
+                                if (value.length == 2 &&
+                                    !_fechaVencimiento.text.contains('/')) {
                                   _fechaVencimiento.text = '$value/';
-                                  _fechaVencimiento.selection = TextSelection.fromPosition(
-                                    TextPosition(offset: _fechaVencimiento.text.length),
+                                  _fechaVencimiento.selection =
+                                      TextSelection.fromPosition(
+                                    TextPosition(
+                                        offset: _fechaVencimiento.text.length),
                                   );
                                 }
                               },
@@ -713,14 +772,18 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                           Expanded(
                             child: TextField(
                               controller: _cvv,
-                              style: const TextStyle(color: ProyectColors.textPrimary),
+                              style: const TextStyle(
+                                  color: ProyectColors.textPrimary),
                               decoration: InputDecoration(
                                 labelText: 'CVV',
-                                prefixIcon: Icon(Icons.lock, color: ProyectColors.primaryGreen),
-                                labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                                prefixIcon: Icon(Icons.lock,
+                                    color: ProyectColors.primaryGreen),
+                                labelStyle: const TextStyle(
+                                    color: ProyectColors.textPrimary),
                                 filled: true,
                                 fillColor: ProyectColors.surfaceDark,
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                                border: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(12)),
                               ),
                               keyboardType: TextInputType.number,
                               maxLength: 3,
@@ -732,54 +795,70 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                       const SizedBox(height: 8),
                       TextField(
                         controller: _nombreTitular,
-                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Nombre del titular',
-                          prefixIcon: Icon(Icons.person, color: ProyectColors.primaryGreen),
-                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          prefixIcon: Icon(Icons.person,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
                           filled: true,
                           fillColor: ProyectColors.surfaceDark,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _direccion,
-                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Dirección de facturación',
-                          prefixIcon: Icon(Icons.home, color: ProyectColors.primaryGreen),
-                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          prefixIcon: Icon(Icons.home,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
                           filled: true,
                           fillColor: ProyectColors.surfaceDark,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _correo,
-                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Correo electrónico',
-                          prefixIcon: Icon(Icons.email, color: ProyectColors.primaryGreen),
-                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          prefixIcon: Icon(Icons.email,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
                           filled: true,
                           fillColor: ProyectColors.surfaceDark,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         keyboardType: TextInputType.emailAddress,
                       ),
                       const SizedBox(height: 8),
                       TextField(
                         controller: _telefono,
-                        style: const TextStyle(color: ProyectColors.textPrimary),
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
                         decoration: InputDecoration(
                           labelText: 'Teléfono',
-                          prefixIcon: Icon(Icons.phone, color: ProyectColors.primaryGreen),
-                          labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                          prefixIcon: Icon(Icons.phone,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
                           filled: true,
                           fillColor: ProyectColors.surfaceDark,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
                         ),
                         keyboardType: TextInputType.phone,
                       ),
@@ -791,7 +870,8 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
           ),
           actions: [
             TextButton(
-              child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
+              child:
+                  const Text('Cancelar', style: TextStyle(color: Colors.red)),
               onPressed: () {
                 Navigator.of(context).pop();
               },
@@ -800,11 +880,13 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: ProyectColors.primaryGreen,
               ),
-              child: const Text('Aceptar', style: TextStyle(color: ProyectColors.backgroundDark)),
+              child: const Text('Aceptar',
+                  style: TextStyle(color: ProyectColors.backgroundDark)),
               onPressed: () {
                 if (_metodoPagoSeleccionado == null) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Selecciona un método de pago')),
+                    const SnackBar(
+                        content: Text('Selecciona un método de pago')),
                   );
                   return;
                 }
@@ -821,13 +903,16 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
 
                   if (tarjeta.length != 16 || int.tryParse(tarjeta) == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Número de tarjeta inválido')),
+                      const SnackBar(
+                          content: Text('Número de tarjeta inválido')),
                     );
                     return;
                   }
                   if (!vencimientoRegex.hasMatch(venc)) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Fecha de vencimiento inválida. Usa MM/YYYY')),
+                      const SnackBar(
+                          content: Text(
+                              'Fecha de vencimiento inválida. Usa MM/YYYY')),
                     );
                     return;
                   }
@@ -839,13 +924,15 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                   }
                   if (nombre.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Nombre del titular requerido')),
+                      const SnackBar(
+                          content: Text('Nombre del titular requerido')),
                     );
                     return;
                   }
                   if (!emailRegex.hasMatch(correo)) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Correo electrónico inválido')),
+                      const SnackBar(
+                          content: Text('Correo electrónico inválido')),
                     );
                     return;
                   }
@@ -916,16 +1003,31 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
             dropdownColor: ProyectColors.surfaceDark,
             decoration: InputDecoration(
               labelText: 'Artículo',
-              prefixIcon: Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
+              prefixIcon:
+                  Icon(Icons.inventory_2, color: ProyectColors.primaryGreen),
               labelStyle: const TextStyle(color: ProyectColors.textPrimary),
               filled: true,
               fillColor: ProyectColors.surfaceDark,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
             ),
             items: _articulos
                 .map((art) => DropdownMenuItem<String>(
-                      value: art['id'],
-                      child: Text(art['nombre'], style: const TextStyle(color: ProyectColors.textPrimary)),
+                      value: art['id'].toString(),
+                      child: Row(
+                        children: [
+                          Text(art['nombre'],
+                              style: const TextStyle(
+                                  color: ProyectColors.textPrimary)),
+                          const SizedBox(
+                            width: 8,
+                            child: Text(','),
+                          ),
+                          Text(art['marca_id'].toString(),
+                              style: const TextStyle(
+                                  color: ProyectColors.textPrimary)),
+                        ],
+                      ),
                     ))
                 .toList(),
             onChanged: (value) {
@@ -943,11 +1045,14 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                   style: const TextStyle(color: ProyectColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Cantidad',
-                    prefixIcon: Icon(Icons.confirmation_number, color: ProyectColors.primaryGreen),
-                    labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                    prefixIcon: Icon(Icons.confirmation_number,
+                        color: ProyectColors.primaryGreen),
+                    labelStyle:
+                        const TextStyle(color: ProyectColors.textPrimary),
                     filled: true,
                     fillColor: ProyectColors.surfaceDark,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
@@ -964,14 +1069,19 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                   style: const TextStyle(color: ProyectColors.textPrimary),
                   decoration: InputDecoration(
                     labelText: 'Precio unitario',
-                    prefixIcon: Icon(Icons.attach_money, color: ProyectColors.primaryGreen),
-                    labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+                    prefixIcon: Icon(Icons.attach_money,
+                        color: ProyectColors.primaryGreen),
+                    labelStyle:
+                        const TextStyle(color: ProyectColors.textPrimary),
                     filled: true,
                     fillColor: ProyectColors.surfaceDark,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                   controller: TextEditingController(
-                    text: _selectedArticulo == null ? '' : _precioUnitario.toStringAsFixed(2),
+                    text: _selectedArticulo == null
+                        ? ''
+                        : _precioUnitario.toStringAsFixed(2),
                   ),
                 ),
               ),
@@ -984,10 +1094,12 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: ProyectColors.primaryGreen,
                 padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: _agregarAlCarrito,
-              icon: const Icon(Icons.add_shopping_cart, color: ProyectColors.backgroundDark),
+              icon: const Icon(Icons.add_shopping_cart,
+                  color: ProyectColors.backgroundDark),
               label: const Text(
                 'Agregar al carrito',
                 style: TextStyle(
@@ -1019,9 +1131,11 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                   final item = _carrito[index];
                   return Card(
                     color: ProyectColors.surfaceDark,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1029,12 +1143,18 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item['nombre'], style: const TextStyle(color: ProyectColors.textPrimary, fontWeight: FontWeight.bold)),
-                              Text('Cantidad: ${item['cantidad']}', style: const TextStyle(color: ProyectColors.textPrimary)),
+                              Text(item['nombre'],
+                                  style: const TextStyle(
+                                      color: ProyectColors.textPrimary,
+                                      fontWeight: FontWeight.bold)),
+                              Text('Cantidad: ${item['cantidad']}',
+                                  style: const TextStyle(
+                                      color: ProyectColors.textPrimary)),
                             ],
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: ProyectColors.danger),
+                            icon: const Icon(Icons.delete,
+                                color: ProyectColors.danger),
                             tooltip: 'Eliminar',
                             onPressed: () => _eliminarDelCarrito(item['id']),
                           ),
@@ -1051,13 +1171,16 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
               style: const TextStyle(color: ProyectColors.textPrimary),
               decoration: InputDecoration(
                 labelText: 'Precio total',
-                prefixIcon: Icon(Icons.calculate, color: ProyectColors.primaryGreen),
+                prefixIcon:
+                    Icon(Icons.calculate, color: ProyectColors.primaryGreen),
                 labelStyle: const TextStyle(color: ProyectColors.textPrimary),
                 filled: true,
                 fillColor: ProyectColors.surfaceDark,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
-              controller: TextEditingController(text: _precioTotal.toStringAsFixed(2)),
+              controller:
+                  TextEditingController(text: _precioTotal.toStringAsFixed(2)),
             ),
             const SizedBox(height: 16),
             SizedBox(
@@ -1066,10 +1189,12 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: ProyectColors.primaryGreen,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 onPressed: _comprar,
-                icon: const Icon(Icons.shopping_cart_checkout, color: ProyectColors.backgroundDark),
+                icon: const Icon(Icons.shopping_cart_checkout,
+                    color: ProyectColors.backgroundDark),
                 label: const Text(
                   'Comprar',
                   style: TextStyle(
@@ -1104,6 +1229,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
   final TextEditingController _descripcion = TextEditingController();
   final TextEditingController _codigoSAT = TextEditingController();
   final TextEditingController _precioEstimado = TextEditingController();
+  bool _filePickerAbierto = false;
   //Cargar dropdown de marcas, familias y líneas
   List<Map<String, dynamic>> _loadMarca = [];
   String? _selectedMarca;
@@ -1111,23 +1237,29 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
   String? _selectedFamilia;
   List<Map<String, dynamic>> _loadLinea = [];
   String? _selectedLinea;
+
+  final supabase = Supabase.instance.client;
+
   //Cargar dropdown de proveedores
   void _loadDrops() async {
-    _loadMarca = [
-      {'id': 1, 'name': 'Marca 1'},
-      {'id': 2, 'name': 'Marca 2'},
-      {'id': 3, 'name': 'Marca 3'},
-    ];
-    _loadFamilia = [
-      {'id': 1, 'name': 'Familia 1'},
-      {'id': 2, 'name': 'Familia 2'},
-      {'id': 3, 'name': 'Familia 3'}
-    ];
-    _loadLinea = [
-      {'id': 1, 'name': 'Línea 1'},
-      {'id': 2, 'name': 'Línea 2'},
-      {'id': 3, 'name': 'Línea 3'},
-    ];
+    final responseLineas = await supabase.from('Linea').select('id, nombre');
+    final responseFamilias =
+        await supabase.from('Familia').select('id, nombre, prefijo');
+    final responseMarcas = await supabase.from('Marca').select('id, nombre');
+
+    // Asegúrate de que las respuestas sean listas antes de asignarlas
+    if (responseLineas is List &&
+        responseFamilias is List &&
+        responseMarcas is List) {
+      setState(() {
+        _loadLinea = List<Map<String, dynamic>>.from(responseLineas);
+        _loadFamilia = List<Map<String, dynamic>>.from(responseFamilias);
+        _loadMarca = List<Map<String, dynamic>>.from(responseMarcas);
+      });
+    } else {
+      // Manejo de errores si alguna respuesta falla
+      print('Error al cargar datos desde Supabase');
+    }
   }
 
   //Guardar el proveedor
@@ -1152,7 +1284,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
         'Linea': _selectedLinea,
         'Descripcion': _descripcion.text,
         'CodigoSAT': _codigoSAT.text,
-        'PrecioEstimado': double.parse(_precioEstimado.text),
+        'PrecioEstimado': _precioEstimado.text,
       });
       if (_guardarProvee.length > cantidadAntes) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1161,6 +1293,11 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
           ),
         );
         print(_guardarProvee);
+        try {
+          _guardarBase();
+        } catch (e) {
+          print(e);
+        }
         Limpiar();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1172,6 +1309,20 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
     } catch (e) {
       print(e);
     }
+  }
+
+  void _guardarBase() async {
+    await supabase.from('Proveedores').insert({
+      'rubro': _rubro.text,
+      'nombre': _nombre.text,
+      'marca_id': int.parse(_selectedMarca!),
+      'familia_id': int.parse(_selectedFamilia!),
+      'linea_id': int.parse(_selectedLinea!),
+      'descripcion': _descripcion.text,
+      'codigo_sat': int.parse(_codigoSAT.text),
+      'precios': _precioEstimado.text,
+      'deshabilitado': true,
+    });
   }
 
   @override
@@ -1244,7 +1395,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
                 items: _loadMarca
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 onChanged: (value) {
@@ -1279,7 +1430,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
                 items: _loadFamilia
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 onChanged: (value) {
@@ -1310,7 +1461,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
                 items: _loadLinea
                     .map((item) => DropdownMenuItem<String>(
                           value: item['id'].toString(),
-                          child: Text(item['name']),
+                          child: Text(item['nombre']),
                         ))
                     .toList(),
                 onChanged: (value) {
@@ -1344,6 +1495,11 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
             Expanded(
               child: TextField(
                 controller: _codigoSAT,
+                keyboardType: TextInputType.number,
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(8),
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Código SAT',
@@ -1361,21 +1517,47 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
             const SizedBox(width: 16),
             //Precio estimado
             Expanded(
-              child: TextField(
-                controller: _precioEstimado,
-                style: const TextStyle(color: ProyectColors.textPrimary),
-                decoration: InputDecoration(
-                  labelText: 'Precio estimado',
-                  prefixIcon: Icon(Icons.attach_money,
-                      color: ProyectColors.primaryGreen),
-                  labelStyle:
-                      const TextStyle(color: ProyectColors.textSecondary),
-                  filled: true,
-                  fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+              child: GestureDetector(
+                onTap: () async {
+                  if (_filePickerAbierto) return;
+                  _filePickerAbierto = true;
+
+                  try {
+                    FilePickerResult? result =
+                        await FilePicker.platform.pickFiles();
+
+                    if (result != null && result.files.single.path != null) {
+                      String filePath = result.files.single.path!;
+                      String fileName =
+                          path.basename(filePath); // Solo el nombre del archivo
+
+                      setState(() {
+                        _precioEstimado.text =
+                            fileName; // Guarda solo el nombre
+                      });
+                    }
+                  } finally {
+                    _filePickerAbierto = false;
+                  }
+                },
+                child: AbsorbPointer(
+                  child: TextField(
+                    controller: _precioEstimado,
+                    style: const TextStyle(color: ProyectColors.textPrimary),
+                    decoration: InputDecoration(
+                      labelText: 'Seleccionar Catalogo De Precios',
+                      prefixIcon: Icon(Icons.attach_file,
+                          color: ProyectColors.primaryGreen),
+                      labelStyle:
+                          const TextStyle(color: ProyectColors.textSecondary),
+                      filled: true,
+                      fillColor: ProyectColors.surfaceDark,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    readOnly: true,
+                  ),
                 ),
-                keyboardType: TextInputType.number,
               ),
             ),
           ],
@@ -1447,16 +1629,18 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
       return false;
     }
 
-    final double? precio = double.tryParse(_precioEstimado.text);
+    final String codigo = _codigoSAT.text.trim();
 
-    if (precio == null || precio <= 0) {
+    if (!RegExp(r'^\d{8}$').hasMatch(codigo)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Precio deben ser números y positivo'),
+          content:
+              Text('El código SAT debe ser un número de 8 dígitos sin signos.'),
         ),
       );
       return false;
     }
+
     return true;
   }
 }
@@ -1466,10 +1650,12 @@ class RegistrarClienteFrecuenteFields extends StatefulWidget {
   const RegistrarClienteFrecuenteFields({super.key});
 
   @override
-  State<RegistrarClienteFrecuenteFields> createState() => _RegistrarClienteFrecuenteFieldsState();
+  State<RegistrarClienteFrecuenteFields> createState() =>
+      _RegistrarClienteFrecuenteFieldsState();
 }
 
-class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecuenteFields> {
+class _RegistrarClienteFrecuenteFieldsState
+    extends State<RegistrarClienteFrecuenteFields> {
   final TextEditingController _nombre = TextEditingController();
   final TextEditingController _apellidoPat = TextEditingController();
   final TextEditingController _apellidoMat = TextEditingController();
@@ -1559,11 +1745,14 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Nombre',
-                  prefixIcon: Icon(Icons.person, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.person, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -1574,11 +1763,14 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Apellido paterno',
-                  prefixIcon: Icon(Icons.person_outline, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.person_outline,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -1589,11 +1781,14 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Apellido materno',
-                  prefixIcon: Icon(Icons.person_outline, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon: Icon(Icons.person_outline,
+                      color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -1608,11 +1803,14 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'Número de teléfono',
-                  prefixIcon: Icon(Icons.phone, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.phone, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
@@ -1624,11 +1822,14 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
                 style: const TextStyle(color: ProyectColors.textPrimary),
                 decoration: InputDecoration(
                   labelText: 'RFC',
-                  prefixIcon: Icon(Icons.badge, color: ProyectColors.primaryGreen),
-                  labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                  prefixIcon:
+                      Icon(Icons.badge, color: ProyectColors.primaryGreen),
+                  labelStyle:
+                      const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
                   fillColor: ProyectColors.surfaceDark,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ),
@@ -1653,7 +1854,8 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
           style: const TextStyle(color: ProyectColors.textPrimary),
           decoration: InputDecoration(
             labelText: 'Régimen fiscal',
-            prefixIcon: Icon(Icons.account_balance, color: ProyectColors.primaryGreen),
+            prefixIcon:
+                Icon(Icons.account_balance, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
@@ -1667,7 +1869,8 @@ class _RegistrarClienteFrecuenteFieldsState extends State<RegistrarClienteFrecue
             style: ElevatedButton.styleFrom(
               backgroundColor: ProyectColors.primaryGreen,
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
             onPressed: _guardar,
             icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
@@ -1691,29 +1894,42 @@ class EtiquetasProductosFields extends StatefulWidget {
   const EtiquetasProductosFields({super.key});
 
   @override
-  State<EtiquetasProductosFields> createState() => _EtiquetasProductosFieldsState();
+  State<EtiquetasProductosFields> createState() =>
+      _EtiquetasProductosFieldsState();
 }
 
-class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> with SingleTickerProviderStateMixin {
+class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  //controller
+  final ScrollController _scrollController = ScrollController();
+  final ScrollController _scrollControllerFamilias = ScrollController();
+  final ScrollController _scrollControllerMarca = ScrollController();
 
   // Línea
   final TextEditingController _lineaNombre = TextEditingController();
-  final List<String> _lineas = [];
+  List<Map<String, dynamic>> _lineas = [];
 
   // Familia
   final TextEditingController _familiaNombre = TextEditingController();
   final TextEditingController _familiaPrefijo = TextEditingController();
-  final List<Map<String, String>> _familias = [];
+  List<Map<String, dynamic>> _familias = [];
 
   // Marca
   final TextEditingController _marcaNombre = TextEditingController();
-  final List<String> _marcas = [];
+  List<Map<String, dynamic>> _marcas = [];
+
+  final supabase = Supabase.instance.client;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _initAsync();
+  }
+
+  Future<void> _initAsync() async {
+    await loadDatos();
   }
 
   @override
@@ -1726,56 +1942,101 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
     super.dispose();
   }
 
-  void _guardarLinea() {
+  void _guardarLinea() async {
     if (_lineaNombre.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa el nombre de la línea')),
+        const SnackBar(
+            content: Text('Por favor ingresa el nombre de la línea')),
       );
       return;
     }
+    int cont = _lineas.length;
     setState(() {
-      _lineas.add(_lineaNombre.text.trim());
-      _lineaNombre.clear();
+      _lineas.add({'nombre': _lineaNombre.text.trim()});
     });
+    if (cont < _lineas.length) {
+      await supabase.from('Linea').insert({'nombre': _lineaNombre.text.trim()});
+    }
+    _lineaNombre.clear();
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Línea guardada con éxito')),
     );
   }
 
-  void _guardarFamilia() {
-    if (_familiaNombre.text.trim().isEmpty || _familiaPrefijo.text.trim().isEmpty) {
+  void _guardarFamilia() async {
+    if (_familiaNombre.text.trim().isEmpty ||
+        _familiaPrefijo.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos de familia')),
+        const SnackBar(
+            content: Text('Por favor completa todos los campos de familia')),
       );
       return;
     }
+    int cont = _familias.length;
+
     setState(() {
       _familias.add({
         'nombre': _familiaNombre.text.trim(),
-        'prefijo': _familiaPrefijo.text.trim(),
+        'prefijo': '${_familiaPrefijo.text.trim()}-',
       });
-      _familiaNombre.clear();
-      _familiaPrefijo.clear();
     });
+    if (cont < _familias.length) {
+      await supabase.from('Familia').insert({
+        'nombre': _familiaNombre.text.trim(),
+        'prefijo': '${_familiaPrefijo.text.trim()}-',
+      });
+    }
+    _familiaNombre.clear();
+    _familiaPrefijo.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Familia guardada con éxito')),
     );
   }
 
-  void _guardarMarca() {
+  void _guardarMarca() async {
     if (_marcaNombre.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor ingresa el nombre de la marca')),
+        const SnackBar(
+            content: Text('Por favor ingresa el nombre de la marca')),
       );
       return;
     }
+    int cont = _marcas.length;
+
     setState(() {
-      _marcas.add(_marcaNombre.text.trim());
-      _marcaNombre.clear();
+      _marcas.add({'nombre': _marcaNombre.text.trim()});
     });
+    if (cont < _marcas.length) {
+      await supabase.from('Marca').insert({
+        'nombre': _marcaNombre.text.trim(),
+      });
+    }
+    _marcaNombre.clear();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Marca guardada con éxito')),
     );
+  }
+
+  Future<void> loadDatos() async {
+    final responseLineas = await supabase.from('Linea').select('id, nombre');
+    final responseFamilias =
+        await supabase.from('Familia').select('id, nombre, prefijo');
+    final responseMarcas = await supabase.from('Marca').select('id, nombre');
+
+    // Asegúrate de que las respuestas sean listas antes de asignarlas
+    if (responseLineas is List &&
+        responseFamilias is List &&
+        responseMarcas is List) {
+      setState(() {
+        _lineas = List<Map<String, dynamic>>.from(responseLineas);
+        _familias = List<Map<String, dynamic>>.from(responseFamilias);
+        _marcas = List<Map<String, dynamic>>.from(responseMarcas);
+      });
+    } else {
+      // Manejo de errores si alguna respuesta falla
+      print('Error al cargar datos desde Supabase');
+    }
   }
 
   @override
@@ -1803,38 +2064,43 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
           ],
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          height: 260, // Ajusta según tu diseño
+        Expanded(
           child: TabBarView(
             controller: _tabController,
             children: [
               // Línea
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   TextField(
                     controller: _lineaNombre,
                     style: const TextStyle(color: ProyectColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: 'Nombre de la línea',
-                      prefixIcon: Icon(Icons.view_stream, color: ProyectColors.primaryGreen),
-                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      prefixIcon: Icon(Icons.view_stream,
+                          color: ProyectColors.primaryGreen),
+                      labelStyle:
+                          const TextStyle(color: ProyectColors.textSecondary),
                       filled: true,
                       fillColor: ProyectColors.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 16),
+                  //button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ProyectColors.primaryGreen,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: _guardarLinea,
-                      icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                      icon: const Icon(Icons.save,
+                          color: ProyectColors.backgroundDark),
                       label: const Text(
                         'Guardar Línea',
                         style: TextStyle(
@@ -1848,19 +2114,93 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                   const SizedBox(height: 12),
                   if (_lineas.isNotEmpty)
                     Expanded(
-                      child: ListView(
-                        children: _lineas
-                            .map((linea) => ListTile(
-                                  leading: const Icon(Icons.view_stream, color: ProyectColors.primaryGreen),
-                                  title: Text(linea, style: const TextStyle(color: ProyectColors.textPrimary)),
-                                ))
-                            .toList(),
+                      child: Container(
+                        height: 800,
+                        decoration: BoxDecoration(
+                          color: ProyectColors.surfaceDark,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: RawScrollbar(
+                          thumbColor: ProyectColors.primaryGreen,
+                          controller: _scrollController,
+                          thumbVisibility: true,
+                          radius: const Radius.circular(8),
+                          thickness: 6,
+                          child: GridView.builder(
+                            controller: _scrollController,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 3,
+                            ),
+                            padding: const EdgeInsets.all(12),
+                            itemCount: _lineas.length,
+                            itemBuilder: (context, index) {
+                              final linea = _lineas[index];
+                              return Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: ProyectColors.backgroundDark,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: ProyectColors.primaryGreen),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.view_stream,
+                                        color: ProyectColors.primaryGreen),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        linea['nombre'] ?? '',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                            color: ProyectColors.textPrimary),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Botón data presionado en $index')),
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.edit,
+                                        color: ProyectColors.warning,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Botón data presionado en $index')),
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.delete,
+                                        color: ProyectColors.danger,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
-                    ),
+                    )
                 ],
               ),
               // Familia
               Column(
+                mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(
@@ -1868,11 +2208,14 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                     style: const TextStyle(color: ProyectColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: 'Nombre de la familia',
-                      prefixIcon: Icon(Icons.family_restroom, color: ProyectColors.primaryGreen),
-                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      prefixIcon: Icon(Icons.family_restroom,
+                          color: ProyectColors.primaryGreen),
+                      labelStyle:
+                          const TextStyle(color: ProyectColors.textSecondary),
                       filled: true,
                       fillColor: ProyectColors.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 12),
@@ -1881,11 +2224,14 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                     style: const TextStyle(color: ProyectColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: 'Prefijo',
-                      prefixIcon: Icon(Icons.short_text, color: ProyectColors.primaryGreen),
-                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      prefixIcon: Icon(Icons.short_text,
+                          color: ProyectColors.primaryGreen),
+                      labelStyle:
+                          const TextStyle(color: ProyectColors.textSecondary),
                       filled: true,
                       fillColor: ProyectColors.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1895,10 +2241,12 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ProyectColors.primaryGreen,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: _guardarFamilia,
-                      icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                      icon: const Icon(Icons.save,
+                          color: ProyectColors.backgroundDark),
                       label: const Text(
                         'Guardar Familia',
                         style: TextStyle(
@@ -1912,14 +2260,102 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                   const SizedBox(height: 12),
                   if (_familias.isNotEmpty)
                     Expanded(
-                      child: ListView(
-                        children: _familias
-                            .map((familia) => ListTile(
-                                  leading: const Icon(Icons.family_restroom, color: ProyectColors.primaryGreen),
-                                  title: Text(familia['nombre']!, style: const TextStyle(color: ProyectColors.textPrimary)),
-                                  subtitle: Text('Prefijo: ${familia['prefijo']}', style: const TextStyle(color: ProyectColors.textSecondary)),
-                                ))
-                            .toList(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: ProyectColors.surfaceDark,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: RawScrollbar(
+                          controller: _scrollControllerFamilias,
+                          thumbColor: ProyectColors.primaryGreen,
+                          thumbVisibility: true,
+                          radius: const Radius.circular(8),
+                          thickness: 6,
+                          child: GridView.builder(
+                            controller: _scrollControllerFamilias,
+                            padding: const EdgeInsets.all(12),
+                            itemCount: _familias.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount:
+                                  3, // Puedes cambiar a 5 si prefieres más columnas
+                              crossAxisSpacing: 4,
+                              mainAxisSpacing: 4,
+                              childAspectRatio: 2.2,
+                            ),
+                            itemBuilder: (context, index) {
+                              final familia = _familias[index];
+                              return Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: ProyectColors.backgroundDark,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: ProyectColors.primaryGreen),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        const Icon(Icons.family_restroom,
+                                            color: ProyectColors.primaryGreen),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            familia['nombre'] ?? '',
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                                color:
+                                                    ProyectColors.textPrimary,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Botón data presionado en $index')),
+                                            );
+                                          },
+                                          child: Icon(
+                                            Icons.edit,
+                                            color: ProyectColors.warning,
+                                          ),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(
+                                              SnackBar(
+                                                  content: Text(
+                                                      'Botón data presionado en $index')),
+                                            );
+                                          },
+                                          child: Icon(
+                                            Icons.delete,
+                                            color: ProyectColors.danger,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Prefijo: ${familia['prefijo']}',
+                                      style: const TextStyle(
+                                          color: ProyectColors.textSecondary,
+                                          fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ),
                 ],
@@ -1933,11 +2369,14 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                     style: const TextStyle(color: ProyectColors.textPrimary),
                     decoration: InputDecoration(
                       labelText: 'Nombre de la marca',
-                      prefixIcon: Icon(Icons.business, color: ProyectColors.primaryGreen),
-                      labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                      prefixIcon: Icon(Icons.business,
+                          color: ProyectColors.primaryGreen),
+                      labelStyle:
+                          const TextStyle(color: ProyectColors.textSecondary),
                       filled: true,
                       fillColor: ProyectColors.surfaceDark,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -1947,10 +2386,12 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                       style: ElevatedButton.styleFrom(
                         backgroundColor: ProyectColors.primaryGreen,
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
                       ),
                       onPressed: _guardarMarca,
-                      icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                      icon: const Icon(Icons.save,
+                          color: ProyectColors.backgroundDark),
                       label: const Text(
                         'Guardar Marca',
                         style: TextStyle(
@@ -1964,13 +2405,87 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
                   const SizedBox(height: 12),
                   if (_marcas.isNotEmpty)
                     Expanded(
-                      child: ListView(
-                        children: _marcas
-                            .map((marca) => ListTile(
-                                  leading: const Icon(Icons.business, color: ProyectColors.primaryGreen),
-                                  title: Text(marca, style: const TextStyle(color: ProyectColors.textPrimary)),
-                                ))
-                            .toList(),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: ProyectColors.surfaceDark,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: RawScrollbar(
+                          controller: _scrollControllerMarca,
+                          thumbColor: ProyectColors.primaryGreen,
+                          thumbVisibility: true,
+                          radius: const Radius.circular(8),
+                          thickness: 6,
+                          child: GridView.builder(
+                            controller: _scrollControllerMarca,
+                            padding: const EdgeInsets.all(12),
+                            itemCount: _marcas.length,
+                            gridDelegate:
+                                const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3, // 4 columnas
+                              crossAxisSpacing: 8,
+                              mainAxisSpacing: 8,
+                              childAspectRatio: 3,
+                            ),
+                            itemBuilder: (context, index) {
+                              final marca = _marcas[index];
+                              return Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: ProyectColors.backgroundDark,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                      color: ProyectColors.primaryGreen),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.business,
+                                        color: ProyectColors.primaryGreen),
+                                    const SizedBox(width: 6),
+                                    Expanded(
+                                      child: Text(
+                                        marca['nombre'] ?? '',
+                                        overflow: TextOverflow.ellipsis,
+                                        style: const TextStyle(
+                                          color: ProyectColors.textPrimary,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Botón data presionado en $index')),
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.edit,
+                                        color: ProyectColors.warning,
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          SnackBar(
+                                              content: Text(
+                                                  'Botón data presionado en $index')),
+                                        );
+                                      },
+                                      child: Icon(
+                                        Icons.delete,
+                                        color: ProyectColors.danger,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
                     ),
                 ],
@@ -1982,4 +2497,3 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields> wit
     );
   }
 }
-
