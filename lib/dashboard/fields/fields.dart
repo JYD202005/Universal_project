@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:intl/intl.dart';
 
 ///////----------------Artículos--------------------//////
 class RegistrarArticuloFields extends StatefulWidget {
@@ -49,7 +50,9 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
     // Asegúrate de que las respuestas sean listas antes de asignarlas
     if (responseLineas is List &&
         responseFamilias is List &&
-        responseMarcas is List) {
+        responseMarcas is List &&
+        responseProveedores is List) {
+      if (!mounted) return;
       setState(() {
         _loadLinea = List<Map<String, dynamic>>.from(responseLineas);
         _loadFamilia = List<Map<String, dynamic>>.from(responseFamilias);
@@ -94,7 +97,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
       final familiaSeleccionada = _loadFamilia.firstWhere(
         (familia) => familia['id'].toString() == _selectedFamilia,
       );
-      String prefijo = familiaSeleccionada['Prefijo'];
+      String prefijo = familiaSeleccionada['prefijo'];
 
       // Contar cuántas claves ya existen con ese prefijo
       int maxNumero = 0;
@@ -128,7 +131,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
         'cantidad': int.parse(_cantidad.text),
         'cantidad_minima': int.parse(_minimaController.text),
         'codigo': _codigo.text,
-        'Disponible': true,
+        'deshabilitado': true,
       });
       // Verificar si se guardó
       if (_guardardo.length > cantidadAntes) {
@@ -154,6 +157,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   }
 
   void _BaseAdd(String nuevaClave) async {
+    if (!mounted) return;
     await supabase.from('Articulos').insert({
       'clave': nuevaClave,
       'nombre': _nombre.text,
@@ -175,6 +179,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
     _cantidad.clear();
     _codigo.clear();
     _minimaController.clear();
+    if (!mounted) return;
     setState(() {
       _selectedMarca = null;
       _selectedFamilia = null;
@@ -550,6 +555,8 @@ class RegistrarVentaFields extends StatefulWidget {
 }
 
 class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
+  final ScrollController _horizontalTableScrollController = ScrollController();
+
   String? _selectedArticulo;
   int _cantidad = 1;
   final TextEditingController _cantidadController =
@@ -572,11 +579,21 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   final TextEditingController _direccion = TextEditingController();
   final TextEditingController _correo = TextEditingController();
   final TextEditingController _telefono = TextEditingController();
+  final TextEditingController _pagoCliente = TextEditingController();
+  final TextEditingController _cambioController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
+    if (!mounted) return;
     _initAsync();
+  }
+
+  @override
+  void dispose() {
+    _pagoCliente.dispose();
+    _cambioController.dispose();
+    super.dispose();
   }
 
   Future<void> _initAsync() async {
@@ -584,35 +601,73 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   }
 
   Future<void> loadDrop() async {
-    final responseArt = await supabase
-        .from('Articulos')
-        .select('id, nombre, precio, cantidad_stock,marca_id');
+    try {
+      final responseArt = await supabase
+          .from('Articulos')
+          .select(
+              'id, nombre, precio, cantidad_stock, marca:marca_id (nombre),proveedores:provee_id(nombre)')
+          .eq('deshabilitado', true);
+      ;
 
-    if (responseArt is List) {
-      setState(() {
-        _articulos = List<Map<String, dynamic>>.from(responseArt);
-        print(_articulos);
-      });
-    } else {
-      // Manejo de errores si alguna respuesta falla
-      print('Error al cargar datos desde Supabase');
+      if (responseArt is List) {
+        // Extraemos el nombre de la marca y lo incluimos en cada artículo
+        final articulosConMarca = responseArt.map<Map<String, dynamic>>((art) {
+          return {
+            'id': art['id'],
+            'nombre': art['nombre'],
+            'precio': art['precio'],
+            'cantidad_stock': art['cantidad_stock'],
+            'marca_id':
+                art['marca'] != null ? art['marca']['nombre'] : 'Sin marca',
+            'prove_id': art['proveedores'] != null
+                ? art['proveedores']['nombre']
+                : 'Sin proveedor'
+          };
+        }).toList();
+
+        if (!mounted) return;
+        setState(() {
+          _articulos = articulosConMarca;
+        });
+      } else {
+        print('Error al cargar datos desde Supabase');
+      }
+    } catch (e) {
+      print(e);
     }
   }
 
   double get _precioUnitario {
     final articulo = _articulos.firstWhere(
-      (a) => a['id'] == _selectedArticulo,
+      (a) => a['id'].toString() == _selectedArticulo,
       orElse: () => {},
     );
-    return articulo['precio'] ?? 0.0;
+    return double.parse(articulo['precio'].toString()) ?? 0.0;
+  }
+
+  int get _cantidadStock {
+    final articulo = _articulos.firstWhere(
+      (a) => a['id'].toString() == _selectedArticulo,
+      orElse: () => {},
+    );
+    final cantidadStr = articulo['cantidad_stock']?.toString() ?? '';
+    return int.tryParse(cantidadStr) ?? 0;
   }
 
   String get _nombreArticulo {
     final articulo = _articulos.firstWhere(
-      (a) => a['id'] == _selectedArticulo,
+      (a) => a['id'].toString() == _selectedArticulo,
       orElse: () => {},
     );
-    return articulo['nombre'] ?? '';
+    return articulo['nombre'].toString();
+  }
+
+  String get _marca {
+    final articulo = _articulos.firstWhere(
+      (a) => a['id'].toString() == _selectedArticulo,
+      orElse: () => {},
+    );
+    return articulo['marca_id'].toString() ?? 'asereje';
   }
 
   double get _precioTotal {
@@ -621,6 +676,14 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
       total += (item['precio'] as double) * (item['cantidad'] as int);
     }
     return total;
+  }
+
+  String get _provee {
+    final articulo = _articulos.firstWhere(
+      (a) => a['id'].toString() == _selectedArticulo,
+      orElse: () => {},
+    );
+    return articulo['prove_id'].toString() ?? 'error proveedor';
   }
 
   void _agregarAlCarrito() {
@@ -634,10 +697,25 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
       );
       return;
     }
+
+    final index =
+        _carrito.indexWhere((item) => item['id'] == _selectedArticulo);
+    final cantidadActual = index >= 0 ? _carrito[index]['cantidad'] as int : 0;
+    final nuevaCantidadTotal = cantidadActual + parsedCantidad;
+    if (nuevaCantidadTotal > _cantidadStock) {
+      final cantidadRestante = _cantidadStock - cantidadActual;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Cantidad en stock insuficiente.',
+          ),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       _cantidad = parsedCantidad;
-      final index =
-          _carrito.indexWhere((item) => item['id'] == _selectedArticulo);
       if (index >= 0) {
         _carrito[index]['cantidad'] += _cantidad;
       } else {
@@ -646,7 +724,10 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
           'nombre': _nombreArticulo,
           'precio': _precioUnitario,
           'cantidad': _cantidad,
+          'marca_id': _marca,
+          'prove_id': _provee,
         });
+        print(_carrito);
       }
       _cantidadController.text = '1';
       _cantidad = 1;
@@ -704,6 +785,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                         setModalState(() {
                           _metodoPagoSeleccionado = value;
                         });
+                        if (!mounted) return;
                         setState(() {
                           _metodoPagoSeleccionado = value;
                         });
@@ -861,8 +943,77 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                               borderRadius: BorderRadius.circular(12)),
                         ),
                         keyboardType: TextInputType.phone,
+                        inputFormatters: [
+                          FilteringTextInputFormatter
+                              .digitsOnly, // Solo números
+                          LengthLimitingTextInputFormatter(
+                              10), // Máximo 10 dígitos
+                        ],
                       ),
                     ],
+                    if (_metodoPagoSeleccionado == 'Efectivo') ...[
+                      const SizedBox(height: 16),
+                      TextField(
+                        enabled: false,
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Precio total',
+                          prefixIcon: Icon(Icons.calculate,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        controller: TextEditingController(
+                            text: _precioTotal.toStringAsFixed(2)),
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                        style:
+                            const TextStyle(color: ProyectColors.textPrimary),
+                        decoration: InputDecoration(
+                          labelText: 'Pago recibido',
+                          prefixIcon: Icon(Icons.money_rounded,
+                              color: ProyectColors.primaryGreen),
+                          labelStyle:
+                              const TextStyle(color: ProyectColors.textPrimary),
+                          filled: true,
+                          fillColor: ProyectColors.surfaceDark,
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        controller: _pagoCliente,
+                        keyboardType: TextInputType.number,
+                        onChanged: (value) {
+                          final pago = double.tryParse(value.trim()) ?? 0.0;
+                          if (!mounted) return;
+                          setState(() {
+                            _cambioController.text =
+                                (pago - _precioTotal).toString();
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      TextField(
+                          enabled: false,
+                          style: TextStyle(color: ProyectColors.textPrimary),
+                          decoration: InputDecoration(
+                            labelText: 'Cambio',
+                            prefixIcon: Icon(Icons.currency_exchange,
+                                color: ProyectColors.primaryGreen),
+                            labelStyle:
+                                TextStyle(color: ProyectColors.textPrimary),
+                            filled: true,
+                            fillColor: ProyectColors.surfaceDark,
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                          controller: _cambioController),
+                    ]
                   ],
                 ),
               );
@@ -936,7 +1087,40 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                     );
                     return;
                   }
-                  // Puedes agregar más validaciones si lo deseas
+                }
+                if (_metodoPagoSeleccionado == 'Efectivo') {
+                  final totalPagar = _precioTotal.toStringAsFixed(2);
+                  final pagoRecibido = _pagoCliente.text.trim();
+                  if (pagoRecibido.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Ingrese el monto recibido')),
+                    );
+                    return;
+                  }
+                  double? pagoClienteValor = double.tryParse(pagoRecibido);
+                  if (pagoClienteValor == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('Monto ingresado no válido')),
+                    );
+                    return;
+                  }
+                  if (pagoClienteValor <= 0) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text('El monto debe ser mayor a cero')),
+                    );
+                    return;
+                  }
+                  if (double.parse(totalPagar) > double.parse(pagoRecibido)) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('La cantidad entregada es insuficiente')),
+                    );
+                    return;
+                  }
                 }
                 aceptado = true;
                 Navigator.of(context).pop();
@@ -963,8 +1147,15 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
     } else if (_metodoPagoSeleccionado == 'Tarjeta Visa') {
       pagoOk = await _mostrarMetodoPagoDialog();
       if (!pagoOk) return;
+    } else if (_metodoPagoSeleccionado == 'Efectivo') {
+      pagoOk = await _mostrarMetodoPagoDialog();
+      if (!pagoOk) return;
     }
-    // Si pasa todas las validaciones:
+    try {
+      await _guardarVentasPorCarrito();
+    } catch (e) {
+      print(e);
+    } // Si pasa todas las validaciones:
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('¡Compra realizada con éxito!')),
     );
@@ -978,7 +1169,107 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
       _direccion.clear();
       _correo.clear();
       _telefono.clear();
+      _pagoCliente.clear();
+      _cambioController.clear();
+      _selectedArticulo = null;
     });
+  }
+
+  int obtenerStockPorId(String id) {
+    try {
+      final articulo = _articulos.firstWhere((a) => a['id'].toString() == id);
+      return articulo['cantidad_stock'] as int;
+    } catch (e) {
+      return 0;
+    }
+  }
+
+  void _actualizarCantidad(String id, int cambio) {
+    final index = _carrito.indexWhere((item) => item['id'] == id);
+    if (index == -1) return;
+
+    final item = _carrito[index];
+    final cantidadActual = item['cantidad'] as int;
+    final nuevaCantidad = cantidadActual + cambio;
+
+    // Obtener el stock máximo disponible para este artículo
+    final stockDisponible = (obtenerStockPorId(id));
+
+    if (nuevaCantidad > stockDisponible) {
+      final restante = stockDisponible - cantidadActual;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Solo puedes agregar $restante unidad${restante == 1 ? '' : 'es'} más del artículo "${item['nombre']}". '
+            'Stock total disponible: $stockDisponible.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (nuevaCantidad < 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('La cantidad mínima es 1'),
+        ),
+      );
+      return;
+    }
+
+    if (!mounted) return;
+
+    setState(() {
+      _carrito[index]['cantidad'] = nuevaCantidad;
+    });
+  }
+
+  Future<void> _guardarVentasPorCarrito() async {
+    if (!mounted) return;
+    try {
+      for (var item in _carrito) {
+        final int? articuloId = int.tryParse(item['id'] ?? '0');
+        if (articuloId == null) continue;
+
+        final String proveedor = item['prove_id'] ?? '';
+        final int cantidad = item['cantidad'] ?? 0;
+        final double precio = (item['precio'] as num).toDouble();
+        final double total = cantidad * precio;
+
+        // 1. Guardar la venta
+        await supabase.from('Ventas').insert({
+          'articulo_id': articuloId,
+          'proveedor_name': proveedor,
+          'cantidad_com': cantidad,
+          'precio_unic': precio,
+          'total_unico': total,
+          'dia': DateFormat('yyyy-MM-dd').format(DateTime.now()),
+          'hora': DateFormat('HH:mm:ss').format(DateTime.now()),
+        });
+
+        // 2. Obtener stock actual del artículo
+        final response = await supabase
+            .from('Articulos')
+            .select('cantidad_stock')
+            .eq('id', articuloId)
+            .single();
+
+        if (response != null && response['cantidad_stock'] != null) {
+          final int stockActual = response['cantidad_stock'] as int;
+          final int nuevoStock = stockActual - cantidad;
+
+          // Validar que no quede negativo
+          final int stockFinal = nuevoStock >= 0 ? nuevoStock : 0;
+
+          // 3. Actualizar stock
+          await supabase.from('Articulos').update({
+            'cantidad_stock': stockFinal,
+          }).eq('id', articuloId);
+        }
+      }
+    } catch (e) {
+      print('Error al guardar venta y actualizar stock: $e');
+    }
   }
 
   @override
@@ -1044,7 +1335,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                   controller: _cantidadController,
                   style: const TextStyle(color: ProyectColors.textPrimary),
                   decoration: InputDecoration(
-                    labelText: 'Cantidad',
+                    labelText: 'Cantidad, Stock:${_cantidadStock}',
                     prefixIcon: Icon(Icons.confirmation_number,
                         color: ProyectColors.primaryGreen),
                     labelStyle:
@@ -1122,7 +1413,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
             ),
             const SizedBox(height: 12),
             SizedBox(
-              height: 90,
+              height: 109,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: _carrito.length,
@@ -1135,7 +1426,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                         borderRadius: BorderRadius.circular(12)),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                          horizontal: 14, vertical: 10),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1143,13 +1434,32 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(item['nombre'],
+                              Text(item['nombre'].toString(),
                                   style: const TextStyle(
                                       color: ProyectColors.textPrimary,
                                       fontWeight: FontWeight.bold)),
-                              Text('Cantidad: ${item['cantidad']}',
+                              Text(item['marca_id'].toString(),
                                   style: const TextStyle(
-                                      color: ProyectColors.textPrimary)),
+                                      color: ProyectColors.textPrimary,
+                                      fontWeight: FontWeight.bold)),
+                              Row(
+                                spacing: 8,
+                                children: [
+                                  IconButton(
+                                    onPressed: () =>
+                                        _actualizarCantidad(item['id'], -1),
+                                    icon: const Icon(Icons.remove),
+                                  ),
+                                  Text('Cantidad: ${item['cantidad']}',
+                                      style: const TextStyle(
+                                          color: ProyectColors.textPrimary)),
+                                  IconButton(
+                                    onPressed: () =>
+                                        _actualizarCantidad(item['id'], 1),
+                                    icon: const Icon(Icons.add),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
                           IconButton(
@@ -1251,6 +1561,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
     if (responseLineas is List &&
         responseFamilias is List &&
         responseMarcas is List) {
+      if (!mounted) return;
       setState(() {
         _loadLinea = List<Map<String, dynamic>>.from(responseLineas);
         _loadFamilia = List<Map<String, dynamic>>.from(responseFamilias);
@@ -1312,6 +1623,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
   }
 
   void _guardarBase() async {
+    if (!mounted) return;
     await supabase.from('Proveedores').insert({
       'rubro': _rubro.text,
       'nombre': _nombre.text,
@@ -1597,6 +1909,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
     _descripcion.clear();
     _codigoSAT.clear();
     _precioEstimado.clear();
+    if (!mounted) return;
     setState(() {
       _selectedMarca = null;
       _selectedFamilia = null;
@@ -1919,6 +2232,8 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
   final TextEditingController _marcaNombre = TextEditingController();
   List<Map<String, dynamic>> _marcas = [];
 
+  List<String> _prefijosExistentes = [];
+
   final supabase = Supabase.instance.client;
 
   @override
@@ -1930,6 +2245,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
 
   Future<void> _initAsync() async {
     await loadDatos();
+    await _cargarFamilias();
   }
 
   @override
@@ -1942,6 +2258,24 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
     super.dispose();
   }
 
+  Future<void> _cargarFamilias() async {
+    final responseFamilias =
+        await supabase.from('Familia').select('id, nombre, prefijo');
+    if (responseFamilias is List) {
+      setState(() {
+        _familias = responseFamilias
+            .map<Map<String, dynamic>>((f) => {
+                  'id': f['id'],
+                  'nombre': f['nombre'],
+                  'prefijo': f['prefijo'],
+                })
+            .toList();
+        _prefijosExistentes =
+            _familias.map((f) => f['prefijo'] as String).toList();
+      });
+    }
+  }
+
   void _guardarLinea() async {
     if (_lineaNombre.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1951,6 +2285,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
       return;
     }
     int cont = _lineas.length;
+    if (!mounted) return;
     setState(() {
       _lineas.add({'nombre': _lineaNombre.text.trim()});
     });
@@ -1965,6 +2300,8 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
   }
 
   void _guardarFamilia() async {
+    final nuevoPrefijo = '${_familiaPrefijo.text.trim()}-';
+
     if (_familiaNombre.text.trim().isEmpty ||
         _familiaPrefijo.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1973,22 +2310,36 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
       );
       return;
     }
-    int cont = _familias.length;
 
+    // Verificar si el prefijo ya existe
+    if (_prefijosExistentes.contains(nuevoPrefijo)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('El prefijo "$nuevoPrefijo" ya existe.')),
+      );
+      return;
+    }
+
+    int cont = _familias.length;
+    if (!mounted) return;
     setState(() {
       _familias.add({
         'nombre': _familiaNombre.text.trim(),
-        'prefijo': '${_familiaPrefijo.text.trim()}-',
+        'prefijo': nuevoPrefijo,
       });
+      _prefijosExistentes
+          .add(nuevoPrefijo); // Actualizamos la lista de prefijos
     });
+
     if (cont < _familias.length) {
       await supabase.from('Familia').insert({
         'nombre': _familiaNombre.text.trim(),
-        'prefijo': '${_familiaPrefijo.text.trim()}-',
+        'prefijo': nuevoPrefijo,
       });
     }
+
     _familiaNombre.clear();
     _familiaPrefijo.clear();
+
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Familia guardada con éxito')),
     );
@@ -2003,6 +2354,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
       return;
     }
     int cont = _marcas.length;
+    if (!mounted) return;
 
     setState(() {
       _marcas.add({'nombre': _marcaNombre.text.trim()});
@@ -2028,6 +2380,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
     if (responseLineas is List &&
         responseFamilias is List &&
         responseMarcas is List) {
+      if (!mounted) return;
       setState(() {
         _lineas = List<Map<String, dynamic>>.from(responseLineas);
         _familias = List<Map<String, dynamic>>.from(responseFamilias);
