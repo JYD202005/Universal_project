@@ -1248,6 +1248,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
         });
 
         // 2. Obtener stock actual del artículo
+        //asereje cambio si?
         final response = await supabase
             .from('Articulos')
             .select('cantidad_stock')
