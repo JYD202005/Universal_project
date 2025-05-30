@@ -1,3 +1,4 @@
+import 'package:base_de_datos_universal/dashboard/historial.dart';
 import 'package:flutter/material.dart';
 import 'package:base_de_datos_universal/colours/colours.dart';
 import 'package:base_de_datos_universal/login/login_design.dart';
@@ -33,6 +34,9 @@ class MenuBar extends StatelessWidget {
         page = const EmployeesScreen();
         break;
       case 4:
+        page = const HistoryScreen();
+        break;
+      case 5:
         page = const ConfigurationScreen();
         break;
       default:
@@ -129,6 +133,10 @@ class MenuBar extends StatelessWidget {
         NavigationRailDestination(
           icon: Icon(Icons.group),
           label: Text('Empleados'),
+        ),
+        NavigationRailDestination(
+          icon: Icon(Icons.history),
+          label: Text('Historial'),
         ),
         NavigationRailDestination(
           icon: Icon(Icons.settings),

@@ -8,6 +8,7 @@ class ConfigurationScreen extends StatefulWidget {
   @override
   State<ConfigurationScreen> createState() => _ConfigurationScreenState();
 }
+
 ////-----------NO se que poner aqui------------------////
 class _ConfigurationScreenState extends State<ConfigurationScreen> {
   bool _notificaciones = true;
@@ -21,7 +22,7 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
       body: Row(
         children: [
           custom_menu.MenuBar(
-            selectedIndex: 4,
+            selectedIndex: 5,
             onDestinationSelected: (_) {},
           ),
           Expanded(
@@ -40,7 +41,8 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                   ),
                   const SizedBox(height: 32),
                   SwitchListTile(
-                    title: const Text('Notificaciones', style: TextStyle(color: ProyectColors.textPrimary)),
+                    title: const Text('Notificaciones',
+                        style: TextStyle(color: ProyectColors.textPrimary)),
                     value: _notificaciones,
                     activeColor: ProyectColors.primaryGreen,
                     onChanged: (value) {
@@ -51,7 +53,8 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                   ),
                   const Divider(color: ProyectColors.primaryGreen),
                   SwitchListTile(
-                    title: const Text('Tema oscuro', style: TextStyle(color: ProyectColors.textPrimary)),
+                    title: const Text('Tema oscuro',
+                        style: TextStyle(color: ProyectColors.textPrimary)),
                     value: _temaOscuro,
                     activeColor: ProyectColors.primaryGreen,
                     onChanged: (value) {
@@ -62,14 +65,17 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                   ),
                   const Divider(color: ProyectColors.primaryGreen),
                   ListTile(
-                    title: const Text('Idioma', style: TextStyle(color: ProyectColors.textPrimary)),
+                    title: const Text('Idioma',
+                        style: TextStyle(color: ProyectColors.textPrimary)),
                     trailing: DropdownButton<String>(
                       value: _idioma,
                       dropdownColor: ProyectColors.surfaceDark,
                       style: const TextStyle(color: ProyectColors.textPrimary),
                       items: const [
-                        DropdownMenuItem(value: 'Español', child: Text('Español')),
-                        DropdownMenuItem(value: 'Inglés', child: Text('Inglés')),
+                        DropdownMenuItem(
+                            value: 'Español', child: Text('Español')),
+                        DropdownMenuItem(
+                            value: 'Inglés', child: Text('Inglés')),
                       ],
                       onChanged: (value) {
                         setState(() {
@@ -83,15 +89,18 @@ class _ConfigurationScreenState extends State<ConfigurationScreen> {
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: ProyectColors.primaryGreen,
-                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(content: Text('Configuración guardada')),
                       );
                     },
-                    icon: const Icon(Icons.save, color: ProyectColors.backgroundDark),
+                    icon: const Icon(Icons.save,
+                        color: ProyectColors.backgroundDark),
                     label: const Text(
                       'Guardar cambios',
                       style: TextStyle(

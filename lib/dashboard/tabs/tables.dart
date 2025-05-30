@@ -279,6 +279,9 @@ class _ProveedoresTableState extends State<ProveedoresTable> {
                             columns: [
                               DataColumn(
                                   headingRowAlignment: MainAxisAlignment.center,
+                                  label: Center(child: Text('ID'))),
+                              DataColumn(
+                                  headingRowAlignment: MainAxisAlignment.center,
                                   label: Center(child: Text('Nombre'))),
                               DataColumn(
                                   headingRowAlignment: MainAxisAlignment.center,
@@ -310,6 +313,9 @@ class _ProveedoresTableState extends State<ProveedoresTable> {
                               final prov = widget.proveedores[index];
                               return DataRow(
                                 cells: [
+                                  DataCell(Center(
+                                      child:
+                                          Text(prov['id'].toString() ?? ''))),
                                   DataCell(Center(
                                       child: Text(prov['nombre'] ?? ''))),
                                   DataCell(

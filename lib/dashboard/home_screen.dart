@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:base_de_datos_universal/colours/colours.dart';
 import 'package:base_de_datos_universal/dashboard/menubar.dart' as custom_menu;
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardPage extends StatefulWidget {
   const DashboardPage({super.key});
@@ -18,6 +19,7 @@ class _DashboardPageState extends State<DashboardPage> {
 
   //Lsitas Para cargar datos
   List<Map<String, dynamic>> LoadTablaTodo = [];
+  List<String> correos = [];
   // Fijos
   String selectedFilter = 'Todos';
   final List<String> filters = [
@@ -28,9 +30,9 @@ class _DashboardPageState extends State<DashboardPage> {
   ];
   //Datos Variables Cuando se inicia la app
   String usuario = 'José José';
-  String EmpleadosActivos = 180.toString();
-  String VentasDelDia = 1500.toString();
-  String ProductosAgotados = 1.toString();
+  int EmpleadosActivos = 0;
+  int VentasDelDia = 0;
+  int ProductosAgotados = 0;
   String EntradasRegistradas = 10.toString();
 
   @override
@@ -38,7 +40,11 @@ class _DashboardPageState extends State<DashboardPage> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(() {
+        if (!mounted) return;
         loadTabla();
+        empleados();
+        ventasDelDia();
+        productosAgotados();
       });
     });
   }
@@ -86,11 +92,13 @@ class _DashboardPageState extends State<DashboardPage> {
                       const SizedBox(height: 24),
                       Row(
                         children: [
-                          _buildCard('Empleados activos', EmpleadosActivos),
-                          _buildCard('Ventas del día', VentasDelDia),
+                          _buildCard(
+                              'Empleados activos', EmpleadosActivos.toString()),
+                          _buildCard('Ventas del día', VentasDelDia.toString()),
                           _buildCard(
                               'Entradas registradas', EntradasRegistradas),
-                          _buildCard('Productos agotados', ProductosAgotados),
+                          _buildCard('Productos agotados',
+                              ProductosAgotados.toString()),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -107,7 +115,7 @@ class _DashboardPageState extends State<DashboardPage> {
                               setState(() {
                                 switch (filter) {
                                   case 'Todos':
-                                    loadTabla();
+                                    todosAct();
                                     break;
                                   case 'Stock bajo':
                                     stockBajo();
@@ -151,6 +159,78 @@ class _DashboardPageState extends State<DashboardPage> {
         ),
       ),
     );
+  }
+
+  Future<void> empleados() async {
+    final supabase = Supabase.instance.client;
+
+    try {
+      final response = await supabase.from('Usuarios').select('correo');
+
+      if (response is List) {
+        List<String> correos = [];
+
+        for (var item in response) {
+          if (item['correo'] != null) {
+            correos.add(item['correo']);
+          }
+        }
+
+        setState(() {
+          EmpleadosActivos = correos.length;
+        });
+      } else {
+        print('Error al obtener empleados: $response');
+      }
+    } catch (e) {
+      print('Excepción: $e');
+    }
+  }
+
+  Future<void> ventasDelDia() async {
+    final supabase = Supabase.instance.client;
+
+    // Obtener la fecha actual en formato YYYY-MM-DD
+    final String hoy = DateTime.now().toIso8601String().substring(0, 10);
+
+    try {
+      final response = await supabase
+          .from('Ventas')
+          .select('id') // Solo necesitamos contar los registros
+          .eq('dia', hoy); // Filtrar por la fecha de hoy
+
+      if (response is List) {
+        setState(() {
+          VentasDelDia = response.length;
+        });
+      } else {
+        print('Error al obtener ventas del día: $response');
+      }
+    } catch (e) {
+      print('Excepción en ventasDelDia: $e');
+    }
+  }
+
+  Future<void> productosAgotados() async {
+    final supabase = Supabase.instance.client;
+
+    try {
+      final response = await supabase
+          .from('Articulos')
+          .select('id')
+          .eq('cantidad_stock', 0)
+          .eq('deshabilitado', true); // Solo productos activos
+
+      if (response is List) {
+        setState(() {
+          ProductosAgotados = response.length;
+        });
+      } else {
+        print('Error al obtener productos agotados: $response');
+      }
+    } catch (e) {
+      print('Excepción en productosAgotados: $e');
+    }
   }
 
   //cards de datos
@@ -354,126 +434,76 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  void loadTabla() {
-    List<Map<String, dynamic>> temp = [
-      {
-        'clave': 'R-1',
-        'nombre': 'Cables UTP',
-        'familia': 'Redes',
-        'stock_actual': 51,
-        'stock_minimo': 10,
-        'disponible': false,
-        'proveedor': 'Proveedor 1',
-      },
-      {
-        'clave': 'R-2',
-        'nombre': 'Router TP-Link',
-        'familia': 'Redes',
-        'stock_actual': 3,
-        'stock_minimo': 5,
-        'disponible': true,
-        'proveedor': 'Proveedor 2',
-      },
-      {
-        'clave': 'E-1',
-        'nombre': 'Arduino UNO',
-        'familia': 'Electrónica',
-        'stock_actual': 0,
-        'stock_minimo': 15,
-        'disponible': true,
-        'proveedor': 'Proveedor 3',
-      },
-      {
-        'clave': 'I-1',
-        'nombre': 'Multímetro',
-        'familia': 'Instrumentos',
-        'stock_actual': 1,
-        'stock_minimo': 3,
-        'disponible': true,
-        'proveedor': 'sin proveedor',
-      },
-      {
-        'clave': 'I-2',
-        'nombre': 'Osciloscopio',
-        'familia': 'Instrumentos',
-        'stock_actual': 0,
-        'stock_minimo': 5,
-        'disponible': true,
-        'proveedor': 'Proveedor 4',
-      },
-      {
-        'clave': 'E-2',
-        'nombre': 'Resistencias',
-        'familia': 'Electrónica',
-        'stock_actual': 20,
-        'stock_minimo': 10,
-        'disponible': true,
-        'proveedor': null,
-      },
-      {
-        'clave': 'E-3',
-        'nombre': 'Transistores',
-        'familia': 'Electrónica',
-        'stock_actual': 5,
-        'stock_minimo': 10,
-        'disponible': true,
-        'proveedor': null,
-      },
-      {
-        'clave': 'E-4',
-        'nombre': 'Condensadores',
-        'familia': 'Electrónica',
-        'stock_actual': 0,
-        'stock_minimo': 10,
-        'disponible': true,
-        'proveedor': null,
-      },
-      {
-        'clave': 'E-5',
-        'nombre': 'Diodos',
-        'familia': 'Electrónica',
-        'stock_actual': 0,
-        'stock_minimo': 10,
-        'disponible': true,
-        'proveedor': null,
-      },
-      {
-        'clave': 'E-6',
-        'nombre': 'Transistores MOSFET',
-        'familia': 'Electrónica',
-        'stock_actual': 0,
-        'stock_minimo': 10,
-        'disponible': true,
-        'proveedor': null,
-      },
-    ];
-    // Actualizar el estado según el stock
-    for (var item in temp) {
-      int stockActual = item['stock_actual'];
-      int stockMinimo = item['stock_minimo'];
+  Future<void> loadTabla() async {
+    final supabase = Supabase.instance.client;
 
-      if (stockActual * 2 <= stockMinimo) {
-        item['estado'] = 'Crítico';
-      } else if (stockActual < stockMinimo) {
-        item['estado'] = 'Bajo'; // amarillo
-      } else {
-        item['estado'] = 'Óptimo'; // verde
+    final response = await supabase.from('Articulos').select(
+        'clave, nombre, cantidad_stock, cantidad_min, deshabilitado, Familia(nombre), Proveedores(nombre), Marca(nombre), Linea(nombre)');
+
+    if (response is List) {
+      List<Map<String, dynamic>> temp = [];
+
+      for (var item in response) {
+        final int stockActual = item['cantidad_stock'] ?? 0;
+        final int stockMinimo = item['cantidad_min'] ?? 1;
+
+        String estado;
+        if (stockActual * 2 <= stockMinimo) {
+          estado = 'Crítico';
+        } else if (stockActual < stockMinimo) {
+          estado = 'Bajo';
+        } else {
+          estado = 'Óptimo';
+        }
+
+        temp.add({
+          'clave': item['clave'],
+          'nombre': item['nombre'],
+          'familia': item['Familia']?['nombre'] ?? 'Sin familia',
+          'stock_actual': stockActual,
+          'stock_minimo': stockMinimo,
+          'disponible': item['deshabilitado'] ?? false,
+          'proveedor': item['Proveedores']?['nombre'] ?? 'sin proveedor',
+          'estado': estado,
+        });
       }
+      // Filtro:
+      switch (selectedFilter) {
+        case 'Todos':
+          temp = temp
+              .where((item) =>
+                  item['disponible'] == true && item['estado'] != 'Óptimo')
+              .toList();
+          break;
+        case 'Stock bajo':
+          temp = temp
+              .where((item) =>
+                  item['disponible'] == true && (item['estado'] == 'Bajo'))
+              .toList();
+          break;
+        case 'Agotados':
+          temp = temp
+              .where((item) =>
+                  item['disponible'] == true && item['stock_actual'] == 0)
+              .toList();
+          break;
+      }
+      if (!mounted) return;
+      setState(() {
+        LoadTablaTodo = temp;
+      });
+    } else {
+      print('Error al obtener datos: $response');
     }
+  }
 
-    // Filtrar según el filtro seleccionado
-    switch (selectedFilter) {
-      case 'Todos':
-        temp = temp.where((item) => item['disponible'] == true).toList();
-        break;
-      case 'Stock bajo':
-        temp = temp.where((item) => item['disponible'] == true).toList();
-        break;
-      case 'Agotados':
-        temp = temp.where((item) => item['disponible'] == true).toList();
-        break;
-    }
-    LoadTablaTodo = temp;
+  void todosAct() {
+    loadTabla();
+    if (!mounted) return;
+    setState(() {
+      LoadTablaTodo = LoadTablaTodo.where((item) =>
+          item['disponible'] == true && item['estado'] != 'Óptimo').toList();
+    });
   }
 
   void stockBajo() {

@@ -37,6 +37,7 @@ class _LoginDesignState extends State<LoginDesign> {
         email: email,
         password: password,
       );
+      print(response);
 
       if (response.session != null) {
         ScaffoldMessenger.of(context).showSnackBar(

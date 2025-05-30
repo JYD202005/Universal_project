@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
 import 'package:intl/intl.dart';
+import 'dart:io';
 
 ///////----------------Artículos--------------------//////
 class RegistrarArticuloFields extends StatefulWidget {
@@ -22,6 +23,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   final TextEditingController _cantidad = TextEditingController();
   final TextEditingController _codigo = TextEditingController();
   final TextEditingController _minimaController = TextEditingController();
+  final FocusNode _codigoFocus = FocusNode();
 
   final supabase = Supabase.instance.client;
 
@@ -34,9 +36,15 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   String? _selectedLinea;
   List<Map<String, dynamic>> _loadProveedor = [];
   String? _selectedProveedor;
+  List<Map<String, dynamic>> _todos = [];
+
+  bool boton = false;
 
   //Lista Para guardar los artículos
   final List<Map<String, dynamic>> _guardardo = [];
+
+  String _ultimoCodigoIngresado = '';
+  bool _escribiendoCodigo = false;
 
   //Metodo para cargar los dropdowns
   //cambiar lo de adentro por las variables de la base de datos
@@ -65,10 +73,122 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
     }
   }
 
+  Future<void> loadTodo() async {
+    final responseProveedores = await supabase
+        .from('Articulos')
+        .select('id,clave, nombre,cantidad_stock,codigo_barras,deshabilitado');
+    if (responseProveedores is List) {
+      if (!mounted) return;
+      setState(() {
+        _todos = List<Map<String, dynamic>>.from(responseProveedores);
+      });
+    }
+  }
+
+  Future<void> agregarUno() async {
+    // Validar que todos los campos estén vacíos
+    if (_nombre.text.trim().isNotEmpty ||
+        _precio.text.trim().isNotEmpty ||
+        _cantidad.text.trim().isNotEmpty ||
+        _selectedProveedor != null ||
+        _selectedLinea != null ||
+        _selectedFamilia != null ||
+        _selectedMarca != null) {
+      return;
+    }
+    final codigoBuscado = _codigo.text.trim();
+
+    // Buscar el artículo por código de barras
+    final articulo = _todos.firstWhere(
+      (item) => item['codigo_barras'] == codigoBuscado,
+      orElse: () => {},
+    );
+
+    // Si no se encontró
+    if (articulo.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Artículo no encontrado')),
+      );
+      return;
+    }
+
+    // Verificar si el artículo está deshabilitado
+    if (articulo['deshabilitado'] == false) {
+      final nombre = articulo['nombre'] ?? 'desconocido';
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Este producto está deshabilitado: $nombre. Para agregarlo, favor de activarlo.')),
+      );
+      return;
+    }
+
+    final int nuevoStock = (articulo['cantidad_stock'] ?? 0) + 1;
+
+    // Actualizar el stock en la base de datos
+    try {
+      await supabase
+          .from('Articulos')
+          .update({'cantidad_stock': nuevoStock}).eq('id', articulo['id']);
+    } catch (e) {
+      print(e);
+    }
+
+    if (mounted) {
+      // Actualizar lista local
+      setState(() {
+        final index = _todos.indexWhere((e) => e['id'] == articulo['id']);
+        if (index != -1) {
+          _todos[index]['cantidad_stock'] = nuevoStock;
+        }
+        _codigo.clear();
+      });
+      FocusScope.of(context).requestFocus(_codigoFocus);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Stock actualizado')),
+      );
+    }
+  }
+
+  void _onCodigoChangedParaAgregarUno(String? value) {
+    final valor = value?.trim() ?? '';
+    _ultimoCodigoIngresado = valor;
+    _escribiendoCodigo = true;
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (_ultimoCodigoIngresado == valor && _escribiendoCodigo) {
+        _escribiendoCodigo = false;
+
+        if (valor.length >= 6) {
+          agregarUno();
+        }
+      }
+    });
+  }
+
   //Guardar el artículo
   void _guardarArticulo() async {
     try {
       if (!restricciones()) return;
+      final List<String> codigosExistentes = _todos
+          .map((item) => item['codigo_barras']?.toString() ?? '')
+          .where((codigo) => codigo.isNotEmpty)
+          .toList();
+
+      print(codigosExistentes);
+
+      final codigoNuevo = _codigo.text.trim();
+
+      if (codigosExistentes.contains(codigoNuevo)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+                'Código de barras ya existe, favor de eliminar todo y reescribir solo el código de barras donde es necesario'),
+          ),
+        );
+        return;
+      }
 
       if (_minimaController.text.isEmpty) {
         _mostrarCantidadMinimaPopup(
@@ -93,30 +213,10 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
         );
         return;
       }
-      // Obtener el prefijo según la familia seleccionada
-      final familiaSeleccionada = _loadFamilia.firstWhere(
-        (familia) => familia['id'].toString() == _selectedFamilia,
-      );
-      String prefijo = familiaSeleccionada['prefijo'];
 
-      // Contar cuántas claves ya existen con ese prefijo
-      int maxNumero = 0;
-      for (var item in _guardardo) {
-        final clave = item['Clave'];
-        if (clave != null && clave.toString().startsWith(prefijo)) {
-          final partes = clave.split('-');
-          if (partes.length == 2) {
-            final numero = int.tryParse(partes[1]);
-            if (numero != null && numero > maxNumero) {
-              maxNumero = numero;
-            }
-          }
-        }
-      }
       int cantidadAntes = _guardardo.length;
-      // Generar nueva clave
-      final nuevaClave = '$prefijo${maxNumero + 1}';
-
+      final String? nuevaClave =
+          await _generarNuevoPrefijoFamilia(_selectedFamilia);
       int actual = int.parse(_cantidad.text);
       int minimo = int.parse(_minimaController.text);
 
@@ -143,6 +243,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
         print(_guardardo);
         _BaseAdd(nuevaClave);
         Limpiar();
+        loadTodo();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -156,7 +257,72 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
     }
   }
 
-  void _BaseAdd(String nuevaClave) async {
+  Future<int> obtenerSiguienteNumeroFamilia(
+      String familiaId, String basePrefijo) async {
+    // Quitar guion al final si existe, para evitar dobles guiones
+    final prefijoLimpio = basePrefijo.endsWith('-')
+        ? basePrefijo.substring(0, basePrefijo.length - 1)
+        : basePrefijo;
+
+    final resultados = await supabase
+        .from('Articulos')
+        .select('clave')
+        .eq('familia_id', familiaId);
+
+    List<int> numerosUsados = [];
+
+    if (resultados != null && resultados.isNotEmpty) {
+      for (var item in resultados) {
+        final clave = item['clave'];
+        if (clave != null && clave.startsWith('$prefijoLimpio-')) {
+          // Extraer todo lo que viene después del primer guion
+          final indexGuion = clave.indexOf('-');
+          if (indexGuion != -1 && indexGuion < clave.length - 1) {
+            final parteNumero = clave.substring(indexGuion + 1);
+            // Intentar parsear solo la parte numérica (puede haber más guiones)
+            final numero = int.tryParse(parteNumero.split('-')[0]);
+            if (numero != null) {
+              numerosUsados.add(numero);
+            }
+          }
+        }
+      }
+    }
+
+    if (numerosUsados.isEmpty) return 1;
+
+    return numerosUsados.reduce((a, b) => a > b ? a : b) + 1;
+  }
+
+  Future<String?> obtenerPrefijoBaseFamilia(String familiaId) async {
+    final response = await supabase
+        .from('Familia')
+        .select('prefijo')
+        .eq('id', familiaId)
+        .single();
+
+    if (response == null) return null;
+
+    final basePrefijo = response['prefijo']?.toString();
+
+    if (basePrefijo == null || basePrefijo.isEmpty) return null;
+
+    return basePrefijo;
+  }
+
+  Future<String?> _generarNuevoPrefijoFamilia(String? familiaId) async {
+    if (familiaId == null) return null;
+
+    final basePrefijo = await obtenerPrefijoBaseFamilia(familiaId);
+    if (basePrefijo == null) return null;
+
+    final siguienteNumero =
+        await obtenerSiguienteNumeroFamilia(familiaId, basePrefijo);
+
+    return '$basePrefijo$siguienteNumero';
+  }
+
+  void _BaseAdd(String? nuevaClave) async {
     if (!mounted) return;
     await supabase.from('Articulos').insert({
       'clave': nuevaClave,
@@ -185,6 +351,7 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
       _selectedFamilia = null;
       _selectedLinea = null;
       _selectedProveedor = null;
+      _guardardo.clear();
     });
   }
 
@@ -232,7 +399,9 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
   @override
   void initState() {
     super.initState();
+    if (!mounted) return;
     _loadDrops();
+    loadTodo();
   }
 
   @override
@@ -282,6 +451,16 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                   labelText: 'Marca',
                   prefixIcon:
                       Icon(Icons.business, color: ProyectColors.primaryGreen),
+                  suffixIcon: _selectedMarca != null
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _selectedMarca = null;
+                            });
+                          },
+                        )
+                      : null,
                   labelStyle:
                       const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
@@ -313,6 +492,16 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                   labelText: 'Línea',
                   prefixIcon:
                       Icon(Icons.category, color: ProyectColors.primaryGreen),
+                  suffixIcon: _selectedLinea != null
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _selectedLinea = null;
+                            });
+                          },
+                        )
+                      : null,
                   labelStyle:
                       const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
@@ -348,6 +537,16 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                   labelText: 'Familia',
                   prefixIcon:
                       Icon(Icons.group_work, color: ProyectColors.primaryGreen),
+                  suffixIcon: _selectedFamilia != null
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _selectedFamilia = null;
+                            });
+                          },
+                        )
+                      : null,
                   labelStyle:
                       const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
@@ -379,6 +578,16 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
                   labelText: 'Proveedor',
                   prefixIcon: Icon(Icons.local_shipping,
                       color: ProyectColors.primaryGreen),
+                  suffixIcon: _selectedProveedor != null
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.grey),
+                          onPressed: () {
+                            setState(() {
+                              _selectedProveedor = null;
+                            });
+                          },
+                        )
+                      : null,
                   labelStyle:
                       const TextStyle(color: ProyectColors.textSecondary),
                   filled: true,
@@ -444,14 +653,17 @@ class _RegistrarArticuloFieldsState extends State<RegistrarArticuloFields> {
           //Código de barras
           style: const TextStyle(color: ProyectColors.textPrimary),
           controller: _codigo,
+          focusNode: _codigoFocus,
           decoration: InputDecoration(
             labelText: 'Código de barras',
+            hintText: 'Código existente: solo se suma al stock',
             prefixIcon: Icon(Icons.qr_code, color: ProyectColors.primaryGreen),
             labelStyle: const TextStyle(color: ProyectColors.textSecondary),
             filled: true,
             fillColor: ProyectColors.surfaceDark,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
+          onChanged: _onCodigoChangedParaAgregarUno,
         ),
         const SizedBox(height: 24),
         //Botón de guardar
@@ -556,6 +768,10 @@ class RegistrarVentaFields extends StatefulWidget {
 
 class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   final ScrollController _horizontalTableScrollController = ScrollController();
+  final ScrollController _carritoScrollController =
+      ScrollController(); // para el ListView
+  final ScrollController _tituloScrollController =
+      ScrollController(); // para el título scrollable
 
   String? _selectedArticulo;
   int _cantidad = 1;
@@ -581,6 +797,8 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   final TextEditingController _telefono = TextEditingController();
   final TextEditingController _pagoCliente = TextEditingController();
   final TextEditingController _cambioController = TextEditingController();
+  final TextEditingController _barras = TextEditingController();
+  final FocusNode _codigoFocus = FocusNode();
 
   @override
   void initState() {
@@ -605,7 +823,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
       final responseArt = await supabase
           .from('Articulos')
           .select(
-              'id, nombre, precio, cantidad_stock, marca:marca_id (nombre),proveedores:provee_id(nombre)')
+              'id, nombre, precio, cantidad_stock, marca:marca_id (nombre),proveedores:provee_id(nombre),codigo_barras')
           .eq('deshabilitado', true);
       ;
 
@@ -621,7 +839,8 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                 art['marca'] != null ? art['marca']['nombre'] : 'Sin marca',
             'prove_id': art['proveedores'] != null
                 ? art['proveedores']['nombre']
-                : 'Sin proveedor'
+                : 'Sin proveedor',
+            'barras': art['codigo_barras']
           };
         }).toList();
 
@@ -646,12 +865,17 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
   }
 
   int get _cantidadStock {
-    final articulo = _articulos.firstWhere(
-      (a) => a['id'].toString() == _selectedArticulo,
-      orElse: () => {},
-    );
-    final cantidadStr = articulo['cantidad_stock']?.toString() ?? '';
-    return int.tryParse(cantidadStr) ?? 0;
+    try {
+      final articulo = _articulos.firstWhere(
+        (a) => a['id'].toString() == _selectedArticulo,
+        orElse: () => {},
+      );
+      final cantidadStr = articulo['cantidad_stock']?.toString() ?? '';
+      return int.tryParse(cantidadStr) ?? 0;
+    } catch (e) {
+      print(e);
+      return -1;
+    }
   }
 
   String get _nombreArticulo {
@@ -684,6 +908,14 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
       orElse: () => {},
     );
     return articulo['prove_id'].toString() ?? 'error proveedor';
+  }
+
+  String get _barrasPlus {
+    final articulo = _articulos.firstWhere(
+      (a) => a['id'].toString() == _selectedArticulo,
+      orElse: () => {},
+    );
+    return articulo['barras'].toString() ?? '';
   }
 
   void _agregarAlCarrito() {
@@ -1273,9 +1505,59 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
     }
   }
 
+  void buscarPorCodigoDeBarras(String codigo) {
+    final articulo = _articulos.firstWhere(
+      (a) => a['barras'].toString() == codigo,
+      orElse: () => {},
+    );
+
+    if (articulo.isNotEmpty) {
+      if (!mounted) return;
+      setState(() {
+        _selectedArticulo = articulo['id'].toString();
+        _cantidadController.text = '1'; // si quieres establecer por defecto
+        // Puedes agregar más datos como _precio, _nombre, etc.
+      });
+
+      // Opcional: mostrar retroalimentación
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text(
+                'Artículo encontrado: ${articulo['nombre']}, Marca: ${articulo['marca_id']}')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Artículo no encontrado')),
+      );
+    }
+  }
+
+  String _ultimoValorIngresado = '';
+  bool _escribiendo = false;
+
+  void _onCodigoBarrasChanged(String? value) {
+    final valor = value ?? ''; // Por si llega null
+    _ultimoValorIngresado = valor;
+    _escribiendo = true;
+
+    Future.delayed(const Duration(seconds: 1), () {
+      if (_ultimoValorIngresado == valor && _escribiendo) {
+        _escribiendo = false;
+
+        if (valor.trim().length >= 6) {
+          buscarPorCodigoDeBarras(valor.trim());
+          _agregarAlCarrito();
+          _barras.clear();
+        }
+        FocusScope.of(context).requestFocus(_codigoFocus);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
+      scrollDirection: Axis.vertical,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1287,6 +1569,24 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
               fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
+          ),
+          const SizedBox(height: 24),
+          TextField(
+            controller: _barras,
+            focusNode: _codigoFocus,
+            style: const TextStyle(color: ProyectColors.textPrimary),
+            decoration: InputDecoration(
+              labelText: 'Codigo De Barras',
+              hintText: 'Buscar por codigo de barras....',
+              prefixIcon:
+                  Icon(Icons.barcode_reader, color: ProyectColors.primaryGreen),
+              labelStyle: const TextStyle(color: ProyectColors.textPrimary),
+              filled: true,
+              fillColor: ProyectColors.surfaceDark,
+              border:
+                  OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onChanged: _onCodigoBarrasChanged,
           ),
           const SizedBox(height: 24),
           DropdownButtonFormField<String>(
@@ -1323,6 +1623,7 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
                     ))
                 .toList(),
             onChanged: (value) {
+              if (!mounted) return;
               setState(() {
                 _selectedArticulo = value;
               });
@@ -1404,76 +1705,93 @@ class _RegistrarVentaFieldsState extends State<RegistrarVentaFields> {
           ),
           const SizedBox(height: 24),
           if (_carrito.isNotEmpty) ...[
-            const Text(
-              'Carrito',
-              style: TextStyle(
-                color: ProyectColors.primaryGreen,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Carrito',
+                  style: TextStyle(
+                    color: ProyectColors.primaryGreen,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             SizedBox(
               height: 109,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: _carrito.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
-                itemBuilder: (context, index) {
-                  final item = _carrito[index];
-                  return Card(
-                    color: ProyectColors.surfaceDark,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 10),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
+              child: RawScrollbar(
+                controller: _horizontalTableScrollController,
+                thumbColor: ProyectColors.primaryGreen,
+                thumbVisibility: true,
+                radius: Radius.circular(6),
+                thickness: 5,
+                child: Container(
+                  child: ListView.separated(
+                    controller: _horizontalTableScrollController,
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _carrito.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 12),
+                    itemBuilder: (context, index) {
+                      final item = _carrito[index];
+                      return Card(
+                        color: ProyectColors.surfaceDark,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 10),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(item['nombre'].toString(),
-                                  style: const TextStyle(
-                                      color: ProyectColors.textPrimary,
-                                      fontWeight: FontWeight.bold)),
-                              Text(item['marca_id'].toString(),
-                                  style: const TextStyle(
-                                      color: ProyectColors.textPrimary,
-                                      fontWeight: FontWeight.bold)),
-                              Row(
-                                spacing: 8,
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  IconButton(
-                                    onPressed: () =>
-                                        _actualizarCantidad(item['id'], -1),
-                                    icon: const Icon(Icons.remove),
-                                  ),
-                                  Text('Cantidad: ${item['cantidad']}',
+                                  Text(item['nombre'].toString(),
                                       style: const TextStyle(
-                                          color: ProyectColors.textPrimary)),
-                                  IconButton(
-                                    onPressed: () =>
-                                        _actualizarCantidad(item['id'], 1),
-                                    icon: const Icon(Icons.add),
+                                          color: ProyectColors.textPrimary,
+                                          fontWeight: FontWeight.bold)),
+                                  Text(item['marca_id'].toString(),
+                                      style: const TextStyle(
+                                          color: ProyectColors.textPrimary,
+                                          fontWeight: FontWeight.bold)),
+                                  Row(
+                                    spacing: 8,
+                                    children: [
+                                      IconButton(
+                                        onPressed: () =>
+                                            _actualizarCantidad(item['id'], -1),
+                                        icon: const Icon(Icons.remove),
+                                      ),
+                                      Text('Cantidad: ${item['cantidad']}',
+                                          style: const TextStyle(
+                                              color:
+                                                  ProyectColors.textPrimary)),
+                                      IconButton(
+                                        onPressed: () =>
+                                            _actualizarCantidad(item['id'], 1),
+                                        icon: const Icon(Icons.add),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
+                              IconButton(
+                                icon: const Icon(Icons.delete,
+                                    color: ProyectColors.danger),
+                                tooltip: 'Eliminar',
+                                onPressed: () =>
+                                    _eliminarDelCarrito(item['id']),
+                              ),
                             ],
                           ),
-                          IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: ProyectColors.danger),
-                            tooltip: 'Eliminar',
-                            onPressed: () => _eliminarDelCarrito(item['id']),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
+                        ),
+                      );
+                    },
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 16),
@@ -1551,6 +1869,9 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
 
   final supabase = Supabase.instance.client;
 
+  File? _archivoSeleccionado;
+  String? _nombreArchivo;
+
   //Cargar dropdown de proveedores
   void _loadDrops() async {
     final responseLineas = await supabase.from('Linea').select('id, nombre');
@@ -1583,7 +1904,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
     _loadDrops();
   }
 
-  void _guardar() {
+  void _guardar() async {
     try {
       if (!restricciones()) return;
       int cantidadAntes = _guardarProvee.length;
@@ -1606,7 +1927,13 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
         );
         print(_guardarProvee);
         try {
-          _guardarBase();
+          // 2. Solo ahora sube el documento
+          String? urlDocumento;
+          if (_archivoSeleccionado != null && _nombreArchivo != null) {
+            urlDocumento =
+                await subirDocumento(_archivoSeleccionado!, _nombreArchivo!);
+          }
+          _guardarBase(urlDocumento);
         } catch (e) {
           print(e);
         }
@@ -1623,7 +1950,7 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
     }
   }
 
-  void _guardarBase() async {
+  void _guardarBase(String? url) async {
     if (!mounted) return;
     await supabase.from('Proveedores').insert({
       'rubro': _rubro.text,
@@ -1633,9 +1960,27 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
       'linea_id': int.parse(_selectedLinea!),
       'descripcion': _descripcion.text,
       'codigo_sat': int.parse(_codigoSAT.text),
-      'precios': _precioEstimado.text,
+      'precios': url ?? '',
       'deshabilitado': true,
     });
+  }
+
+  // Suponiendo que ya tienes el archivo como File
+  Future<String?> subirDocumento(File archivo, String nombreArchivo) async {
+    final storage = Supabase.instance.client.storage;
+    final bucket = storage.from('precios-provee');
+
+    final response = await bucket.upload(
+      'precios-provee/$nombreArchivo',
+      archivo,
+      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+    );
+
+    if (response != null) {
+      return bucket.getPublicUrl('precios-provee/$nombreArchivo');
+    } else {
+      return null;
+    }
   }
 
   @override
@@ -1832,25 +2177,18 @@ class _RegistrarProveedorFieldsState extends State<RegistrarProveedorFields> {
             Expanded(
               child: GestureDetector(
                 onTap: () async {
-                  if (_filePickerAbierto) return;
-                  _filePickerAbierto = true;
+                  FilePickerResult? result =
+                      await FilePicker.platform.pickFiles(
+                    type: FileType.custom,
+                    allowedExtensions: ['pdf', 'jpg', 'png', 'docx'],
+                  );
 
-                  try {
-                    FilePickerResult? result =
-                        await FilePicker.platform.pickFiles();
+                  if (result != null && result.files.single.path != null) {
+                    _archivoSeleccionado = File(result.files.single.path!);
+                    _nombreArchivo = result.files.single.name;
 
-                    if (result != null && result.files.single.path != null) {
-                      String filePath = result.files.single.path!;
-                      String fileName =
-                          path.basename(filePath); // Solo el nombre del archivo
-
-                      setState(() {
-                        _precioEstimado.text =
-                            fileName; // Guarda solo el nombre
-                      });
-                    }
-                  } finally {
-                    _filePickerAbierto = false;
+                    // Mostrar el nombre del archivo en el campo
+                    _precioEstimado.text = _nombreArchivo!;
                   }
                 },
                 child: AbsorbPointer(
@@ -1979,29 +2317,50 @@ class _RegistrarClienteFrecuenteFieldsState
   final TextEditingController _regimenFiscal = TextEditingController();
 
   final List<Map<String, dynamic>> _clientes = [];
+  File? _archivoSeleccionado;
+  String? _nombreArchivo;
+  final supabase = Supabase.instance.client;
 
-  void _guardar() {
+  void _guardar() async {
     if (!restricciones()) return;
-    int cantidadAntes = _clientes.length;
-    _clientes.add({
-      'nombre': _nombre.text,
-      'apellido_pat': _apellidoPat.text,
-      'apellido_mat': _apellidoMat.text,
-      'num_tel': _numTel.text,
-      'rfc': _rfc.text,
-      'domicilio': _domicilio.text,
-      'regimen_fiscal': _regimenFiscal.text,
-    });
-    if (_clientes.length > cantidadAntes) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cliente guardado con éxito')),
-      );
-      Limpiar();
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error al guardar el cliente')),
-      );
-    }
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user != null) {
+      int cantidadAntes = _clientes.length;
+      _clientes.add({
+        'nombre': _nombre.text,
+        'apellido_pat': _apellidoPat.text,
+        'apellido_mat': _apellidoMat.text,
+        'num_tel': _numTel.text,
+        'rfc': _rfc.text,
+        'domicilio': _domicilio.text,
+        'regimen_fiscal': _regimenFiscal.text,
+      });
+      if (_clientes.length > cantidadAntes) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Cliente guardado con éxito')),
+        );
+        try {
+          // 2. Solo ahora sube el documento
+          String? urlDocumento;
+          if (_archivoSeleccionado != null && _nombreArchivo != null) {
+            urlDocumento =
+                await subirDocumento(_archivoSeleccionado!, _nombreArchivo!);
+          }
+
+          // 3. Guarda en base de datos Supabase
+          _guardarBase(urlDocumento);
+        } catch (e) {
+          print(e);
+        }
+
+        Limpiar();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al guardar el cliente')),
+        );
+      }
+    } else
+      print('Error inicio de seccion');
   }
 
   void Limpiar() {
@@ -2034,6 +2393,37 @@ class _RegistrarClienteFrecuenteFieldsState
       return false;
     }
     return true;
+  }
+
+  // Suponiendo que ya tienes el archivo como File
+  Future<String?> subirDocumento(File archivo, String nombreArchivo) async {
+    final storage = Supabase.instance.client.storage;
+    final bucket = storage.from('fiscales');
+
+    final response = await bucket.upload(
+      'regimenes/$nombreArchivo',
+      archivo,
+      fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+    );
+
+    if (response != null) {
+      return bucket.getPublicUrl('regimenes/$nombreArchivo');
+    } else {
+      return null;
+    }
+  }
+
+  void _guardarBase(String? urlDocumento) async {
+    if (!mounted) return;
+    await supabase.from('Cliente_frec').insert({
+      'nombre': _nombre.text,
+      'apellido_pat': _apellidoPat.text,
+      'apellido_mat': _apellidoMat.text,
+      'num_tel': _numTel.text,
+      'rfc': _rfc.text,
+      'domicilio': _domicilio.text,
+      'regimen_fiscal': urlDocumento ?? '', // Guarda la URL del documento
+    });
   }
 
   @override
@@ -2127,6 +2517,10 @@ class _RegistrarClienteFrecuenteFieldsState
                       borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly, // Solo números
+                  LengthLimitingTextInputFormatter(10), // Máximo 10 dígitos
+                ],
               ),
             ),
             const SizedBox(width: 16),
@@ -2163,17 +2557,37 @@ class _RegistrarClienteFrecuenteFieldsState
           ),
         ),
         const SizedBox(height: 16),
-        TextField(
-          controller: _regimenFiscal,
-          style: const TextStyle(color: ProyectColors.textPrimary),
-          decoration: InputDecoration(
-            labelText: 'Régimen fiscal',
-            prefixIcon:
-                Icon(Icons.account_balance, color: ProyectColors.primaryGreen),
-            labelStyle: const TextStyle(color: ProyectColors.textSecondary),
-            filled: true,
-            fillColor: ProyectColors.surfaceDark,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        GestureDetector(
+          onTap: () async {
+            FilePickerResult? result = await FilePicker.platform.pickFiles(
+              type: FileType.custom,
+              allowedExtensions: ['pdf', 'jpg', 'png', 'docx'],
+            );
+
+            if (result != null && result.files.single.path != null) {
+              _archivoSeleccionado = File(result.files.single.path!);
+              _nombreArchivo = result.files.single.name;
+
+              // Mostrar el nombre del archivo en el campo
+              _regimenFiscal.text = _nombreArchivo!;
+            }
+          },
+          child: AbsorbPointer(
+            child: TextField(
+              enabled: false,
+              controller: _regimenFiscal,
+              style: const TextStyle(color: ProyectColors.textPrimary),
+              decoration: InputDecoration(
+                labelText: 'Régimen fiscal',
+                prefixIcon: Icon(Icons.account_balance,
+                    color: ProyectColors.primaryGreen),
+                labelStyle: const TextStyle(color: ProyectColors.textSecondary),
+                filled: true,
+                fillColor: ProyectColors.surfaceDark,
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -2240,11 +2654,13 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
   @override
   void initState() {
     super.initState();
+    if (!mounted) return;
     _tabController = TabController(length: 3, vsync: this);
     _initAsync();
   }
 
   Future<void> _initAsync() async {
+    if (!mounted) return;
     await loadDatos();
     await _cargarFamilias();
   }
@@ -2263,6 +2679,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
     final responseFamilias =
         await supabase.from('Familia').select('id, nombre, prefijo');
     if (responseFamilias is List) {
+      if (!mounted) return;
       setState(() {
         _familias = responseFamilias
             .map<Map<String, dynamic>>((f) => {
@@ -2356,7 +2773,6 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
     }
     int cont = _marcas.length;
     if (!mounted) return;
-
     setState(() {
       _marcas.add({'nombre': _marcaNombre.text.trim()});
     });
@@ -2369,6 +2785,289 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Marca guardada con éxito')),
     );
+  }
+
+  void _modificarLinea(Map<String, dynamic> linea) {
+    final TextEditingController nombreController =
+        TextEditingController(text: linea['nombre']);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ProyectColors.surfaceDark,
+        title: const Text('Editar Línea',
+            style: TextStyle(color: ProyectColors.primaryGreen)),
+        content: TextField(
+          controller: nombreController,
+          decoration: const InputDecoration(
+              labelText: 'Nombre',
+              labelStyle: TextStyle(color: ProyectColors.textSecondary)),
+          style: TextStyle(color: ProyectColors.textPrimary),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () => Navigator.pop(ctx),
+            icon: Icon(Icons.close, color: ProyectColors.backgroundDark),
+            label: const Text('Cancelar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () async {
+              final nuevoNombre = nombreController.text.trim();
+              if (nuevoNombre.isEmpty) return;
+
+              await supabase
+                  .from('Linea')
+                  .update({'nombre': nuevoNombre}).eq('id', linea['id']);
+              Navigator.pop(ctx);
+              await loadDatos();
+            },
+            icon: Icon(Icons.check, color: ProyectColors.backgroundDark),
+            label: const Text('Aceptar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _modificarFamilia(Map<String, dynamic> familia) {
+    final nombreController = TextEditingController(text: familia['nombre']);
+    final prefijoController = TextEditingController(
+        text: familia['prefijo'].toString().replaceAll('-', ''));
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ProyectColors.surfaceDark,
+        title: const Text('Editar Familia',
+            style: TextStyle(color: ProyectColors.primaryGreen)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nombreController,
+              decoration: const InputDecoration(
+                  labelText: 'Nombre',
+                  labelStyle: TextStyle(color: ProyectColors.textSecondary)),
+              style: TextStyle(color: ProyectColors.textPrimary),
+            ),
+            TextField(
+              controller: prefijoController,
+              decoration: const InputDecoration(
+                  labelText: 'Prefijo',
+                  labelStyle: TextStyle(color: ProyectColors.textSecondary)),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () => Navigator.pop(ctx),
+            icon: Icon(Icons.close, color: ProyectColors.backgroundDark),
+            label: const Text('Cancelar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () async {
+              final nuevoNombre = nombreController.text.trim();
+              final nuevoPrefijo = '${prefijoController.text.trim()}-';
+
+              if (nuevoNombre.isEmpty || nuevoPrefijo.isEmpty) return;
+
+              if (_prefijosExistentes.contains(nuevoPrefijo) &&
+                  nuevoPrefijo != familia['prefijo']) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('El prefijo "$nuevoPrefijo" ya existe.')),
+                );
+                return;
+              }
+
+              await supabase.from('Familia').update({
+                'nombre': nuevoNombre,
+                'prefijo': nuevoPrefijo,
+              }).eq('id', familia['id']);
+              Navigator.pop(ctx);
+              await _cargarFamilias();
+            },
+            icon: Icon(Icons.check, color: ProyectColors.backgroundDark),
+            label: const Text('Aceptar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _modificarMarca(Map<String, dynamic> marca) {
+    final TextEditingController nombreController =
+        TextEditingController(text: marca['nombre']);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ProyectColors.surfaceDark,
+        title: const Text('Editar Marca',
+            style: TextStyle(color: ProyectColors.primaryGreen)),
+        content: TextField(
+          controller: nombreController,
+          decoration: const InputDecoration(
+              labelText: 'Nombre',
+              labelStyle: TextStyle(color: ProyectColors.textSecondary)),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () => Navigator.pop(ctx),
+            icon: Icon(Icons.close, color: ProyectColors.backgroundDark),
+            label: const Text('Cancelar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () async {
+              final nuevoNombre = nombreController.text.trim();
+              if (nuevoNombre.isEmpty) return;
+
+              await supabase
+                  .from('Marca')
+                  .update({'nombre': nuevoNombre}).eq('id', marca['id']);
+              Navigator.pop(ctx);
+              await loadDatos();
+            },
+            icon: Icon(Icons.check, color: ProyectColors.backgroundDark),
+            label: const Text('Aceptar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _eliminarLinea(Map<String, dynamic> linea) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ProyectColors.surfaceDark,
+        title: const Text(
+          'Confirmar',
+          style: const TextStyle(color: ProyectColors.primaryGreen),
+        ),
+        content: Text(
+          '¿Eliminar la línea "${linea['nombre']}"?',
+          style: const TextStyle(color: ProyectColors.textPrimary),
+        ),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            label: const Text(
+              'Cancelar',
+              style: const TextStyle(color: ProyectColors.backgroundDark),
+            ),
+            onPressed: () => Navigator.pop(ctx, false),
+            icon: Icon(Icons.close, color: ProyectColors.backgroundDark),
+          ),
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(backgroundColor: ProyectColors.danger),
+            label: const Text(
+              'Eliminar',
+              style: const TextStyle(color: ProyectColors.backgroundDark),
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: Icon(
+              Icons.delete,
+              color: ProyectColors.backgroundDark,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await supabase.from('Linea').delete().eq('id', linea['id']);
+      await loadDatos();
+    }
+  }
+
+  void _eliminarFamilia(Map<String, dynamic> familia) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ProyectColors.surfaceDark,
+        title: const Text('Confirmar',
+            style: TextStyle(color: ProyectColors.primaryGreen)),
+        content: Text('¿Eliminar la familia "${familia['nombre']}"?',
+            style: TextStyle(color: ProyectColors.textPrimary)),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () => Navigator.pop(ctx, false),
+            icon: Icon(Icons.close, color: ProyectColors.backgroundDark),
+            label: const Text('Cancelar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(backgroundColor: ProyectColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: Icon(Icons.delete, color: ProyectColors.backgroundDark),
+            label: const Text('Eliminar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await supabase.from('Familia').delete().eq('id', familia['id']);
+      await _cargarFamilias();
+    }
+  }
+
+  void _eliminarMarca(Map<String, dynamic> marca) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: ProyectColors.surfaceDark,
+        title: const Text('Confirmar',
+            style: TextStyle(color: ProyectColors.primaryGreen)),
+        content: Text('¿Eliminar la marca "${marca['nombre']}"?',
+            style: TextStyle(color: ProyectColors.textPrimary)),
+        actions: [
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(
+                backgroundColor: ProyectColors.primaryGreen),
+            onPressed: () => Navigator.pop(ctx, false),
+            icon: Icon(Icons.close, color: ProyectColors.backgroundDark),
+            label: const Text('Cancelar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+          ElevatedButton.icon(
+            style: TextButton.styleFrom(backgroundColor: ProyectColors.danger),
+            onPressed: () => Navigator.pop(ctx, true),
+            icon: Icon(Icons.delete, color: ProyectColors.backgroundDark),
+            label: const Text('Eliminar',
+                style: TextStyle(color: ProyectColors.backgroundDark)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await supabase.from('Marca').delete().eq('id', marca['id']);
+      await loadDatos();
+    }
   }
 
   Future<void> loadDatos() async {
@@ -2515,28 +3214,14 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
                                       ),
                                     ),
                                     TextButton(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(
-                                                  'Botón data presionado en $index')),
-                                        );
-                                      },
+                                      onPressed: () => _modificarLinea(linea),
                                       child: Icon(
                                         Icons.edit,
                                         color: ProyectColors.warning,
                                       ),
                                     ),
                                     TextButton(
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(
-                                                  'Botón data presionado en $index')),
-                                        );
-                                      },
+                                      onPressed: () => _eliminarLinea(linea),
                                       child: Icon(
                                         Icons.delete,
                                         color: ProyectColors.danger,
@@ -2669,12 +3354,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
                                         ),
                                         TextButton(
                                           onPressed: () {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Botón data presionado en $index')),
-                                            );
+                                            _modificarFamilia(familia);
                                           },
                                           child: Icon(
                                             Icons.edit,
@@ -2683,12 +3363,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
                                         ),
                                         TextButton(
                                           onPressed: () {
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                  content: Text(
-                                                      'Botón data presionado en $index')),
-                                            );
+                                            _eliminarFamilia(familia);
                                           },
                                           child: Icon(
                                             Icons.delete,
@@ -2808,12 +3483,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(
-                                                  'Botón data presionado en $index')),
-                                        );
+                                        _modificarMarca(marca);
                                       },
                                       child: Icon(
                                         Icons.edit,
@@ -2822,12 +3492,7 @@ class _EtiquetasProductosFieldsState extends State<EtiquetasProductosFields>
                                     ),
                                     TextButton(
                                       onPressed: () {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          SnackBar(
-                                              content: Text(
-                                                  'Botón data presionado en $index')),
-                                        );
+                                        _eliminarMarca(marca);
                                       },
                                       child: Icon(
                                         Icons.delete,
